@@ -348,6 +348,8 @@
       let needN = 0, correct = 0, extra = 0;
       for (const id in need) { needN += need[id]; correct += Math.min(need[id], got[id] || 0); }
       for (const id in got) extra += Math.max(0, got[id] - (need[id] || 0));
+      // a different dish: something they never ordered is in the bowl, or one of their items is missing entirely
+      const wrong = Object.keys(got).some(id => !need[id]) || Object.keys(need).some(id => !got[id]);
       let acc = correct / needN - extra * 0.12;
       if (c.order.karashi && !karashi) acc -= 0.12;
       if (!c.order.karashi && karashi) acc -= 0.05;
@@ -359,9 +361,18 @@
       const pay = items.reduce((a, id) => a + ING[id].price, 0) + (sake ? 300 : 0);
       const tip = sat >= 0.8 ? Math.round(pay * (0.1 + (sat - 0.8)) * c.look.tip / 10) * 10 : 0;
       const stars = clamp(Math.round(1 + sat * 4), 1, 5);
-      return { sat, pay, tip, stars, perfect };
+      return { sat, pay, tip, stars, perfect, wrong };
     }
     function applyServe(c, res, items, karashi, sake) {
+      if (res.wrong) { // wrong order: they push the bowl back, don't pay, and storm out
+        c.st = 'angry'; c.t = 0; c.bowl = null; s.day.angry++;
+        P.pop = clamp(P.pop - 5, 0, 100); P.rep = clamp(P.rep * 0.88 + 1 * 0.12, 0, 5);
+        const x = c.x, y = c.y - 34;
+        s.fx.push({ k: 'emote', e: 'anger', x, y: y + 4, t: 0, life: 1.4 });
+        s.fx.push({ k: 'jp', str: '이거 안 시켰는데요!', x, y: y - 10, col: '#ffb0a0', t: 0, life: 1.8 });
+        toast(`${c.look.name}${josa(c.look.name, '이', '가')} 주문과 다른 음식에 화가 나서 돌아갔어요…`, 'bad'); sfx('bad');
+        save(); return;
+      }
       c.st = 'eat'; c.t = 0; c.f = 0; c.bowl = { items, karashi, sake }; c.sat = res.sat;
       const total = res.pay + res.tip;
       P.money += total; P.total += total; P.served++;
