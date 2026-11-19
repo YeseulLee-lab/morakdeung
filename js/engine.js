@@ -114,7 +114,7 @@
     const s = {
       scene: 'title', t: 0, clock: 0, customers: [], fx: [], steam: [], peds: [], drops: [], splash: [], ripples: [],
       order: null, trans: null, spawnT: 2, day: null, closed: false, staff: null, chef: { serve: 0 }, simmer: {},
-      hover: null, hoverShop: false, demo: null, pedT: 0.5, saveT: 0, lastOrderToast: false,
+      hover: null, hoverShop: false, demo: null, pedT: 0.5, saveT: 0, lastOrderToast: false, closing: false,
     };
     E.s = s;
     let uid = 0;
@@ -184,7 +184,7 @@
     E.save = save;
     function resetTransient() {
       s.customers = []; s.fx = []; s.order = null; s.trans = null; s.staff = null; s.simmer = {};
-      s.closed = false; s.spawnT = 2; s.day = freshDay(); s.hover = null; s.hoverShop = false; s.lastOrderToast = false;
+      s.closed = false; s.closing = false; s.spawnT = 2; s.day = freshDay(); s.hover = null; s.hoverShop = false; s.lastOrderToast = false;
     }
     E.newGame = function () {
       P = fresh(); resetTransient(); s.clock = 0; s.scene = 'exterior'; buildSeats();
@@ -438,12 +438,12 @@
         if (!s.demo && !s.closed) {
           s.clock = Math.min(480, s.clock + dt * 2);
           if (s.clock >= 450 && !s.lastOrderToast) { s.lastOrderToast = true; toast('마지막 주문! 이제 새 손님은 오지 않아요'); }
-          if (s.clock >= 480 && s.customers.length === 0 && !s.order) {
+          if ((s.clock >= 480 || s.closing) && s.customers.length === 0 && !s.order) {
             s.closed = true; P.best = Math.max(P.best, s.day.sales);
-            E.emit('summary', { day: P.day, ...s.day, avg: s.day.n ? s.day.stars / s.day.n : 0 }); save();
+            E.emit('summary', { day: P.day, ...s.day, avg: s.day.n ? s.day.stars / s.day.n : 0, early: s.clock < 450 }); save();
           }
         }
-        if (!s.closed && (s.demo || s.clock < 450)) {
+        if (!s.closed && !s.closing && (s.demo || s.clock < 450)) {
           s.spawnT -= dt;
           if (s.spawnT <= 0) {
             spawn();
@@ -567,11 +567,13 @@
       c.restore();
       // noren over the door (sways)
       const [d0, d1] = A.XS.door, nw = (d1 - d0) / 4;
-      for (let i = 0; i < 4; i++) {
+      const shut = s.closing || s.closed || s.clock >= 450;
+      for (let i = 0; i < 4 && !shut; i++) {
         const g0 = d0 + i * nw, off = Math.round(Math.sin(t * 2 + i * 1.3));
         A.fF(c, g0, g0 + nw - 0.03, 30 - off, 47, '#141a40'); A.fF(c, g0 + 0.03, g0 + nw - 0.06, 31 - off, 47, '#22306a'); A.fF(c, g0 + 0.03, g0 + nw - 0.06, 44, 47, '#30418a');
       }
-      { const q = IE((d0 + d1) / 2, 3, 38.5); ptext(c, '오뎅', q[0], q[1] - 5, '#f4ecd8', 10, 'center'); }
+      if (!shut) { const q = IE((d0 + d1) / 2, 3, 38.5); ptext(c, '오뎅', q[0], q[1] - 5, '#f4ecd8', 10, 'center'); }
+      else { const q = IE((d0 + d1) / 2, 3.05, 30); A.line(c, q[0] - 8, q[1] - 12, q[0], q[1] - 18, INK); A.line(c, q[0] + 8, q[1] - 12, q[0], q[1] - 18, INK); R(c, q[0] - 16, q[1] - 12, 32, 13, INK); R(c, q[0] - 15, q[1] - 11, 30, 11, '#f4ead0'); ptext(c, '영업종료', q[0], q[1] - 11, '#b82a1a', 8, 'center'); }
       // lanterns
       const LT = extLanterns();
       if (P.up.lantern2) { const a = IE(4.0, 3.78, 54), b = IE(10.0, 3.78, 54); A.line(c, a[0], a[1], b[0], b[1], INK); }
@@ -1065,8 +1067,25 @@
       s.simmer[id] = { n: E.stockMax(), t: E.simmerT(), T: E.simmerT() };
       toast(`새 메뉴 「${ing.name}」${josa(ing.name, '이', '가')} 냄비에 들어갔어요!`, 'good'); sfx('buy'); save(); E.emit('changed');
     };
+    // close up early: no new guests, finish the ones inside, then the night's ledger
+    E.closeShop = function () {
+      if (s.demo || s.closed || s.closing || s.scene === 'title') return;
+      s.closing = true; s.lastOrderToast = true;
+      if (s.order) closeOrder(true);
+      // guests who haven't been served yet are politely sent home — no anger, no reputation hit.
+      // those already eating finish their bowl.
+      let sent = 0;
+      s.customers.forEach(c => {
+        if (['walk', 'sit', 'think', 'order'].includes(c.st)) {
+          sent++; c.claimed = false; leave(c);
+          s.fx.push({ k: 'emote', e: 'sweat', x: c.x, y: c.y - 30, t: 0, life: 1.0 });
+        }
+      });
+      toast(sent ? `영업 종료! 주문 전인 손님 ${sent}명은 양해를 구하고 보내드렸어요` : '영업 종료! 먹던 손님이 다 드시면 문을 닫아요'); sfx('door');
+      E.emit('changed');
+    };
     E.nextNight = function () {
-      P.day++; s.clock = 0; s.day = freshDay(); s.closed = false; s.spawnT = 2; s.lastOrderToast = false; save();
+      P.day++; s.clock = 0; s.day = freshDay(); s.closed = false; s.closing = false; s.spawnT = 2; s.lastOrderToast = false; save();
       toast(`${P.day}일째 밤 개점!`);
     };
 

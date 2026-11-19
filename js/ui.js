@@ -77,6 +77,9 @@
     const hh = String(Math.floor(mins / 60) % 24).padStart(2, '0'), mm = String(mins % 60).padStart(2, '0');
     const inside = s.scene !== 'exterior';
     const busy = !!s.trans || !!s.demo;
+    const [ask, setAsk] = useState(false);
+    useEffect(() => { if (!ask) return; const tm = setTimeout(() => setAsk(false), 3000); return () => clearTimeout(tm); }, [ask]);
+    const shut = s.closing || s.closed;
     return html`<div className="hud">
       <div className="plate"><b>모락등</b><small>${RANKS[P.rank].name}</small></div>
       <div className=${'money' + (bump ? ' bump' : '')} key=${'m' + bump}><${Icon} id="coin" size=${10} /><span>${yen(mref.current)}</span></div>
@@ -86,6 +89,7 @@
       <div className="hud-btns">
         <button className="btn small" disabled=${busy} onClick=${() => (inside ? E.exitShop() : E.enterShop())}>${inside ? '밖으로' : '가게로'}</button>
         <button className="btn small gold" disabled=${!!s.demo} onClick=${openShop}>장부</button>
+        <button className=${'btn small' + (ask ? ' danger' : '')} disabled=${busy || shut} onClick=${() => { if (ask) { setAsk(false); E.closeShop(); } else setAsk(true); }}>${shut ? '마감 중' : ask ? '정말 닫을까요?' : '영업 종료'}</button>
         <button className="btn small ghost" disabled=${!!s.demo} onClick=${() => E.startDemo()}>데모</button>
         <button className="btn small ghost icon" aria-label="소리 켜기/끄기" onClick=${toggleSound}>${sound ? '♪' : '×'}</button>
       </div>
@@ -216,6 +220,7 @@
       <div className="modal summary" role="dialog">
         <div className="sum-noren">오늘 영업 끝</div>
         <h2>${d.day}일째 밤 매출 장부</h2>
+        ${d.early ? html`<p className="early">오늘은 일찍 문을 닫았어요</p>` : null}
         <dl>
           <dt>방문 손님</dt><dd>${d.cust}명</dd>
           <dt>판매</dt><dd>${d.n}접시</dd>
@@ -258,6 +263,7 @@
       else if (ordering) msg = `주문 대기 ${ordering}명 — 말풍선을 클릭`;
       else msg = '손님을 기다리는 중… 오뎅 냄비를 클릭하면 재고 확인';
     } else if (s.scene === 'pot' && s.order && s.order.cid) msg = '냄비 속 재료를 클릭해서 접시에 담아요';
+    if (s.closing && !s.closed && s.scene !== 'pot') msg = s.customers.length ? `영업 종료 중 — 남은 손님 ${s.customers.length}명을 마무리하면 오늘 장부가 나와요` : '문을 닫는 중…';
     if (!msg) return null;
     return html`<div className="hint">${msg}</div>`;
   }
