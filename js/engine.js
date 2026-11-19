@@ -60,9 +60,9 @@
   // ---- quarter-view interior layout (world tiles → A.iso) ----
   const IS = A.iso, IL = A.IL;
   const KX = [3, 4, 2, 5, 1, 6, 0, 7];            // counter seats fill from the pot outward
-  const DOOR = [10.55, -0.35], AIS_C = 0.95, AIS_A = 5.45, AIS_B = 8.7, HUBX = 9.75, CTR_GY = 2.25;
-  const S_IDLE = [9.95, 4.05], S_PASS = [9.35, 2.85], CHEF_AT = [3.7, 3.7];
-  const TABLES = { A: [3.0, 7.0], B: [7.2, 7.0] };
+  const DOOR = [9.15, -0.35], AIS_C = 0.95, AIS_A = 4.65, AIS_B = 7.2, HUBX = 8.55, CTR_GY = 2.25;
+  const S_IDLE = [8.9, 3.7], S_PASS = [8.45, 2.8], CHEF_AT = [3.15, 3.55];
+  const TABLES = { A: [2.4, 5.85], B: [6.1, 5.85] };
   const worldGy = (x, y) => ((y - IL.OY) / IL.HH - (x - IL.OX) / IL.HW) / 2;
   const POT = (() => {
     const [a, b, c, d] = IL.POT, pts = [];
@@ -122,7 +122,7 @@
       const seats = [], door = IS(DOOR[0], DOOR[1]);
       const pt = (gx, gy, lift) => { const q = IS(gx, gy); return [q[0], q[1] - lift]; };
       for (let i = 0; i < E.counterSeats(); i++) {
-        const gx = 1.5 + KX[i], gy = 1.75, [x, y] = pt(gx, gy, 3), b = IS(gx - 0.05, 2.52, IL.CH);
+        const gx = 1.0 + KX[i] * 0.95, gy = 1.75, [x, y] = pt(gx, gy, 3), b = IS(gx - 0.05, 2.52, IL.CH);
         seats.push({ id: 'c' + i, type: 'c', gx, gy, x, y, dir: 'down', bowl: { x: b[0], y: b[1] },
           path: [door, IS(DOOR[0], AIS_C), IS(gx, AIS_C), [x, y]], appr: { to: [gx + 0.5, AIS_C + 0.1], aisle: AIS_C } });
       }
@@ -133,11 +133,11 @@
         const [cx, cy] = TABLES[t.id]; t.gx = cx; t.gy = cy; [t.x, t.y] = IS(cx, cy);
         [-0.48, 0.48].forEach((dx, i) => {
           const gx = cx + dx, side = dx < 0 ? -1 : 1;
-          let [x, y] = pt(gx, cy - 1.0, 1), b = IS(gx, cy - 0.28, IL.TH);
-          seats.push({ id: 't' + t.id + 'u' + i, type: 'tt', table: t.id, gx, gy: cy - 1.0, x, y, dir: 'down', bowl: { x: b[0], y: b[1] },
+          let [x, y] = pt(gx, cy - 0.9, 1), b = IS(gx, cy - 0.28, IL.TH);
+          seats.push({ id: 't' + t.id + 'u' + i, type: 'tt', table: t.id, gx, gy: cy - 0.9, x, y, dir: 'down', bowl: { x: b[0], y: b[1] },
             path: [door, IS(DOOR[0], AIS_A), IS(gx, AIS_A), [x, y]], appr: { to: [gx + side * 0.55, AIS_A + 0.1], aisle: AIS_A } });
-          [x, y] = pt(gx, cy + 1.05, 1); b = IS(gx, cy + 0.28, IL.TH);
-          seats.push({ id: 't' + t.id + 'd' + i, type: 'tb', table: t.id, gx, gy: cy + 1.05, x, y, dir: 'up', bowl: { x: b[0], y: b[1] },
+          [x, y] = pt(gx, cy + 0.95, 1); b = IS(gx, cy + 0.28, IL.TH);
+          seats.push({ id: 't' + t.id + 'd' + i, type: 'tb', table: t.id, gx, gy: cy + 0.95, x, y, dir: 'up', bowl: { x: b[0], y: b[1] },
             path: [door, IS(DOOR[0], AIS_B), IS(gx, AIS_B), [x, y]], appr: { to: [gx + side * 0.55, AIS_B - 0.25], aisle: AIS_B } });
         });
       });
@@ -620,8 +620,8 @@
       return { pose: 'sit', mood: '' };
     }
     function intLanterns() {
-      const L = [[...IS(2.6, 0.3, IL.WH - 3), 1], [...IS(7.4, 0.3, IL.WH - 3), 1]];
-      if (P.up.lantern1) L.push([...IS(0.3, 1.9, IL.WH - 3), 1], [...IS(0.3, 8.3, IL.WH - 3), 1]);
+      const L = [[...IS(2.4, 0.3, IL.WH - 3), 1], [...IS(6.6, 0.3, IL.WH - 3), 1]];
+      if (P.up.lantern1) L.push([...IS(0.3, 1.9, IL.WH - 3), 1], [...IS(0.3, 6.9, IL.WH - 3), 1]);
       return L;
     }
     function drawInterior(c) {
@@ -699,8 +699,8 @@
       IL2.forEach(([x, y, sz], i) => lantern(c, x, y, t, i + 3, sz, null));
       if (P.up.lantern2) {
         const pts = [];
-        for (let g = 8.5; g >= 0.5; g -= 1) pts.push(IS(0.2, g, IL.WH - 2));
-        for (let g = 0.6; g <= 11.6; g += 1) pts.push(IS(g, 0.2, IL.WH - 2));
+        for (let g = 7.0; g >= 0.5; g -= 1) pts.push(IS(0.2, g, IL.WH - 2));
+        for (let g = 0.6; g <= 10.0; g += 1) pts.push(IS(g, 0.2, IL.WH - 2));
         for (let i = 1; i < pts.length; i++) A.line(c, pts[i - 1][0], pts[i - 1][1] + 2, pts[i][0], pts[i][1] + 2, INK);
         pts.forEach((q, i) => lantern(c, q[0], q[1], t, i, 0, null));
       }
