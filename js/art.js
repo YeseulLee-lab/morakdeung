@@ -727,17 +727,23 @@
     isoLine(c, iso(c0, d1, CH - 2), iso(c1, d1, CH - 2), '#3a1e10');
     isoLine(c, iso(c0, d1, CH), iso(c1, d1, CH), '#e0a462'); isoLine(c, iso(c1, d0, CH), iso(c1, d1, CH), '#d09050');
     for (let gg = 3.2; gg < c1 - 0.6; gg += 1.3) isoLine(c, iso(gg, 2.45, CH), iso(gg + 0.5, 2.45, CH), '#b67a40');
-    // oden-bar trough: a long stainless tray of broth sunk into the counter, right in front of the guests
-    box(c, px0 - 0.03, py0 - 0.03, px1 + 0.03, py1 + 0.03, CH, CH + 4, '#c8ccd6', '#9a9eaa', '#7a7e8a');
-    isoLine(c, iso(px0 - 0.03, py1 + 0.03, CH + 4), iso(px1 + 0.03, py1 + 0.03, CH + 4), '#e8ecf2');
-    // ladle + paper cups for broth at the far end of the trough
-    { const q = iso(px1 + 0.25, 2.4, CH); for (let k = 0; k < 3; k++) { R(c, q[0] - 2 + k * 4, q[1] - 6, 3, 6, INK); R(c, q[0] - 1 + k * 4, q[1] - 5, 2, 5, '#f4f0e8'); } }
+    // the chef's copper oden pot, sunk into the counter
+    box(c, px0, py0, px1, py1, CH, CH + 5, '#a86c28', '#b8642e', '#8a4a22');
+    isoLine(c, iso(px0, py1, CH + 5), iso(px1, py1, CH + 5), '#f0a060'); isoLine(c, iso(px1, py0, CH + 5), iso(px1, py1, CH + 5), '#d88a4a');
     // sake warmer (kanzake machine) with a tokkuri inside
-    box(c, px1 + 0.2, 2.55, px1 + 0.65, 2.9, CH, CH + 11, '#c8ccd6', '#9a9eaa', '#7a7e8a');
-    { const p = iso(px1 + 0.42, 2.72, CH + 11); R(c, p[0] - 2, p[1] - 5, 4, 5, INK); R(c, p[0] - 1, p[1] - 4, 2, 4, '#f2eee2'); const q = iso(px1 + 0.65, 2.9, CH + 6); R(c, q[0] - 3, q[1] - 2, 2, 2, '#f04a3a'); }
-    // karashi + soy at the chef's end
-    let p = iso(0.62, 2.4, CH); R(c, p[0] - 2, p[1] - 10, 5, 10, INK); R(c, p[0] - 1, p[1] - 9, 3, 9, '#2a1410'); R(c, p[0] - 1, p[1] - 9, 3, 2, '#c82a2a');
-    p = iso(0.72, 2.75, CH); R(c, p[0] - 3, p[1] - 7, 7, 7, INK); R(c, p[0] - 2, p[1] - 4, 5, 3, '#d0a010'); R(c, p[0] - 2, p[1] - 6, 5, 2, '#fff080');
+    box(c, 2.95, 2.2, 3.45, 2.6, CH, CH + 11, '#c8ccd6', '#9a9eaa', '#7a7e8a');
+    { const p = iso(3.2, 2.4, CH + 11); R(c, p[0] - 2, p[1] - 5, 4, 5, INK); R(c, p[0] - 1, p[1] - 4, 2, 4, '#f2eee2'); const q = iso(3.45, 2.6, CH + 6); R(c, q[0] - 3, q[1] - 2, 2, 2, '#f04a3a'); }
+    // karashi + soy
+    let p = iso(3.0, 2.8, CH); R(c, p[0] - 2, p[1] - 10, 5, 10, INK); R(c, p[0] - 1, p[1] - 9, 3, 9, '#2a1410'); R(c, p[0] - 1, p[1] - 9, 3, 2, '#c82a2a');
+    p = iso(3.45, 2.85, CH); R(c, p[0] - 3, p[1] - 7, 7, 7, INK); R(c, p[0] - 2, p[1] - 4, 5, 3, '#d0a010'); R(c, p[0] - 2, p[1] - 6, 5, 2, '#fff080');
+    // every counter seat gets its own little cup of hot broth
+    (o.seats || []).forEach(se => {
+      if (se.type !== 'c') return;
+      const g = se.gx - 0.15;
+      box(c, g - 0.17, 2.56, g + 0.17, 2.86, CH, CH + 5, '#f2eee2', '#2c3c78', '#1e2a5a');
+      flr(c, g - 0.12, 2.6, g + 0.12, 2.82, CH + 5, '#b8742e'); flr(c, g - 0.08, 2.63, g + 0.02, 2.72, CH + 5, '#d89a4a');
+      isoLine(c, iso(g - 0.17, 2.86, CH + 3), iso(g + 0.17, 2.86, CH + 3), '#f2eee2');
+    });
     // draft-beer server: tower with two taps + drip tray
     box(c, c1 - 1.2, 2.25, c1 - 0.6, 2.55, CH, CH + 2, '#8a8e9a', '#6a6e7a', '#4a4e5a');
     { const q = iso(c1 - 0.9, 2.35, CH + 2); R(c, q[0] - 1, q[1] - 14, 3, 14, '#c8ccd6'); R(c, q[0] - 4, q[1] - 15, 9, 3, '#b8bcc8'); R(c, q[0] - 4, q[1] - 21, 2, 6, '#2a2a30'); R(c, q[0] + 3, q[1] - 21, 2, 6, '#c8322a'); R(c, q[0] - 1, q[1] - 12, 3, 4, '#e8b030'); }
@@ -765,7 +771,6 @@
   function setLayout(lv) {
     const L = LV[lv];
     Object.assign(IL, { LV: lv, GX: L.GX, GY: L.GY, ENT: L.ENT, WIN: L.WIN, POSTER: L.POSTER, CTR: [0.5, L.cEnd, 2.1, 2.95] });
-    IL.POT = [1.0, 2.24, L.cEnd - 1.85, 2.72]; // the long oden-bar trough running in front of the guests
     IL.OX = Math.round(240 - (IL.GX - IL.GY) * IL.HW / 2);
     IL.OY = Math.max(64, Math.round((326 - (IL.GX + IL.GY) * IL.HH) / 2));
   }

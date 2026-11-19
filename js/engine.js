@@ -137,7 +137,7 @@
       const pt = (gx, gy, lift) => { const q = IS(gx, gy); return [q[0], q[1] - lift]; };
       const route = (aisle, gx, x, y) => [door, IS(DOOR_IN, DOOR[1]), IS(DOOR_IN, aisle), IS(gx, aisle), [x, y]];
       for (let i = 0; i < E.counterSeats(); i++) {
-        const gx = 3.2 + KX[i] * 0.75, gy = STOOL_GY, [x, y] = pt(gx, gy, 3), b = IS(gx + 0.3, 2.86, IL.CH);
+        const gx = 4.2 + KX[i] * 0.75, gy = STOOL_GY, [x, y] = pt(gx, gy, 3), b = IS(gx + 0.3, 2.84, IL.CH);
         seats.push({ id: 'c' + i, type: 'c', gx, gy, x, y, dir: 'up', bowl: { x: b[0], y: b[1] },
           path: route(AIS_A, gx, x, y), appr: { to: [gx + 0.5, AIS_A - 0.1], aisle: AIS_A } });
       }
@@ -247,6 +247,7 @@
         if (Math.random() < dt * 9) s.steam.push({ ...(([x, y]) => ({ x, y }))(IE(rnd(6.4, 7.6), 3.3, 47)), vx: rnd(-4, 6), vy: rnd(-14, -9), r: rnd(1.5, 3), t: 0, life: rnd(1.6, 2.6), w: 'ext' });
         if (Math.random() < dt * 6) s.steam.push({ ...(([x, y]) => ({ x: x + rnd(-1, 1), y }))(IE(9.15, 1.05, 132)), vx: rnd(2, 8), vy: rnd(-8, -4), r: rnd(1.5, 3), t: 0, life: rnd(1, 1.6), w: 'ext' });
       } else if (sc === 'interior') {
+        s.customers.forEach(cu => { if (cu.seat.type === 'c' && cu.st !== 'walk' && cu.st !== 'leave' && Math.random() < dt * 2.5) { const q = IS(cu.seat.gx - 0.15 + rnd(-0.08, 0.08), 2.7, IL.CH + 5); s.steam.push({ x: q[0], y: q[1], vx: rnd(-2, 2), vy: rnd(-10, -6), r: rnd(1, 2), t: 0, life: rnd(0.8, 1.4), w: 'in' }); } });
         if (Math.random() < dt * 14) { const q = IS(rnd(POT.in[0], POT.in[2]), rnd(POT.in[1], POT.in[3]), IL.CH + 5); s.steam.push({ x: q[0], y: q[1] - 2, vx: rnd(-3, 3), vy: rnd(-16, -9), r: rnd(1.5, 3.5), t: 0, life: rnd(1.4, 2.4), w: 'in' }); }
       } else if (sc === 'pot') {
         if (Math.random() < dt * 22) s.steam.push({ x: rnd(140, 350), y: rnd(60, 240), vx: rnd(-6, 6), vy: rnd(-26, -14), r: rnd(4, 9), t: 0, life: rnd(1.2, 2.2), w: 'pot' });
@@ -698,23 +699,19 @@
       // pot contents: slots laid out on the iso broth surface
       const [ia, ib, ic, id] = POT.in, hb = IL.CH + 4;
       A.flr(c, ia, ib, ic, id, hb, '#a86c28');
-      // one long row of compartments; each holds skewers of one ingredient leaning on the rim
-      const nSlots = E.slots(), cw = (ic - ia) / nSlots;
+      const nSlots = E.slots(), cols = Math.ceil(nSlots / 2), cw = (ic - ia) / cols, rh = (id - ib) / 2;
       for (let i = 0; i < nSlots; i++) {
-        const g0 = ia + i * cw;
-        A.flr(c, g0, ib, g0 + cw, id, hb, i % 2 ? '#b67a2c' : '#c08634');
+        const col = i % cols, row = (i / cols) | 0, g0 = ia + col * cw, r0 = ib + row * rh;
+        A.flr(c, g0, r0, g0 + cw, r0 + rh, hb, row ? '#b67a2c' : '#c08634');
         const iid = P.menu[i];
         if (iid) {
-          const n = Math.min(4, P.stock[iid] || 0);
-          for (let k = 0; k < n; k++) {
-            const q = IS(g0 + cw * (0.18 + k * 0.21), ib + 0.12 + (k % 2) * 0.2, hb), x = q[0] - 2, y = q[1] - 2;
-            A.line(c, x + 3, y, x + 7, y - 9, '#f0dca8'); // skewer sticking out of the broth
-            R(c, x - 1, y - 1, 7, 6, '#3a1a0a'); R(c, x, y, 5, 4, A.BLOB[iid]); R(c, x, y, 5, 1, 'rgba(255,255,255,.35)');
-          }
+          const n = Math.min(3, P.stock[iid] || 0), q = IS(g0 + cw / 2, r0 + rh / 2, hb);
+          for (let k = 0; k < n; k++) { const x = q[0] - 5 + k * 3, y = q[1] - 2 + (k % 2) - 1; R(c, x, y, 3, 3, A.BLOB[iid]); R(c, x, y + 2, 3, 1, 'rgba(0,0,0,.3)'); }
         }
       }
-      for (let k = 1; k < nSlots; k++) A.isoLine(c, IS(ia + k * cw, ib, hb), IS(ia + k * cw, id, hb), '#8a8e9a');
-      for (let i = 0; i < 7; i++) { const q = IS(ia + ((i * 0.97 + t * 0.25) % (ic - ia)), ib + (i % 2 ? 0.08 : 0.36), hb); R(c, q[0], q[1], 1, 1, '#ffe0a0'); }
+      for (let k = 1; k < cols; k++) A.isoLine(c, IS(ia + k * cw, ib, hb), IS(ia + k * cw, id, hb), '#8a8e9a');
+      A.isoLine(c, IS(ia, ib + rh, hb), IS(ic, ib + rh, hb), '#8a8e9a');
+      for (let i = 0; i < 4; i++) { const q = IS(ia + ((i * 0.43 + t * 0.25) % (ic - ia)), ib + (i % 2 ? 0.1 : 0.4), hb); R(c, q[0], q[1], 1, 1, '#ffe0a0'); }
       if (s.hover === 'pot' && !s.trans) {
         const b = Math.sin(t * 8) > 0 ? '#ffe080' : '#ffb040', [a1, b1, c1, d1] = IL.POT, h1 = IL.CH + 6;
         const Q = [IS(a1 - 0.08, b1 - 0.08, h1), IS(c1 + 0.08, b1 - 0.08, h1), IS(c1 + 0.08, d1 + 0.08, h1), IS(a1 - 0.08, d1 + 0.08, h1)];
@@ -927,7 +924,7 @@
     // INPUT
     // =====================================================
     function hitShop(x, y) { return inPoly(x, y, SHOP_POLY); }
-    function hitPot(x, y) { const [a, b, c2, d] = IL.POT, h = IL.CH; return inPoly(x, y, [IS(a - 0.2, b - 0.2, h + 14), IS(c2 + 0.2, b - 0.2, h + 14), IS(c2 + 0.2, d + 0.2, h - 2), IS(a - 0.2, d + 0.2, h - 2)]); }
+    function hitPot(x, y) { return x >= POT.x0 && x <= POT.x1 && y >= POT.y0 && y <= POT.y1; }
     function custAt(x, y) {
       for (let i = s.customers.length - 1; i >= 0; i--) {
         const c = s.customers[i];
@@ -1031,7 +1028,7 @@
       o.bowl = [];
       c.st = 'wait';
       closeOrder(false);
-      s.fx.push({ k: 'dish', delay: 0.4, t: 0, dur: 0.5, ...(([x, y]) => ({ x0: x, y0: y - 4 }))(IS(clamp(c.seat.gx, IL.POT[0] + 0.2, IL.POT[2] - 0.2), (IL.POT[1] + IL.POT[3]) / 2, IL.CH + 5)), x1: c.seat.bowl.x, y1: c.seat.bowl.y, items, karashi, sake, cid: c.id, res });
+      s.fx.push({ k: 'dish', delay: 0.4, t: 0, dur: 0.5, x0: POT.cx, y0: POT.cy - 4, x1: c.seat.bowl.x, y1: c.seat.bowl.y, items, karashi, sake, cid: c.id, res });
       s.chef.serve = 1.0; sfx('serve');
     };
     E.restockPlan = function (id) {
