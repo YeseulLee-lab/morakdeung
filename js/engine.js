@@ -34,13 +34,15 @@
     { id: 'seat1', name: '카운터석 +2', desc: '카운터를 6석으로 넓힌다', price: 900, rank: 0, icon: 'u_seat' },
     { id: 'pot1', name: '큰 냄비', desc: '칸 9개 · 준비 최대 8개 · 끓이는 시간 단축', price: 1200, rank: 0, icon: 'u_pot' },
     { id: 'sign', name: '입간판', desc: '지나가는 사람 눈에 띄어 손님 증가', price: 1000, rank: 1, icon: 'u_sign' },
+    { id: 'expand1', name: '가게 확장', desc: '홀을 넓히고 카운터를 늘린다. 테이블과 카운터석을 더 놓을 수 있다', price: 1500, rank: 1, icon: 'u_expand' },
     { id: 'sake', name: '데운 사케 세트', desc: '데운 사케(¥300) 주문이 들어온다', price: 1600, rank: 1, icon: 'sake' },
-    { id: 'table1', name: '테이블석 A', desc: '4인용 테이블 설치', price: 1800, rank: 1, icon: 'u_table' },
-    { id: 'seat2', name: '카운터석 +2', desc: '카운터를 8석으로 넓힌다', price: 2400, rank: 2, icon: 'u_seat', req: 'seat1' },
+    { id: 'table1', name: '테이블석 A', desc: '4인용 테이블 설치', price: 1800, rank: 1, icon: 'u_table', req: 'expand1' },
+    { id: 'seat2', name: '카운터석 +2', desc: '늘어난 카운터에 2석을 더 놓는다', price: 2400, rank: 2, icon: 'u_seat', req: 'expand1' },
+    { id: 'expand2', name: '가게 확장 2', desc: '옆 공간까지 터서 홀이 더 넓어진다. 두 번째 테이블을 놓을 수 있다', price: 4000, rank: 2, icon: 'u_expand', req: 'expand1' },
     { id: 'lantern2', name: '등불 장식 줄', desc: '처마와 천장에 작은 등불을 줄줄이. 인기 증가', price: 2000, rank: 2, icon: 'u_lantern', req: 'lantern1' },
     { id: 'dashi', name: '비법 육수', desc: '모든 손님의 만족도 증가', price: 3500, rank: 2, icon: 'u_dashi' },
     { id: 'pot2', name: '특대 구리 냄비', desc: '칸 12개 · 준비 최대 10개 · 더 빨리 끓는다', price: 5000, rank: 2, icon: 'u_pot', req: 'pot1' },
-    { id: 'table2', name: '테이블석 B', desc: '두 번째 4인용 테이블', price: 4500, rank: 3, icon: 'u_table', req: 'table1' },
+    { id: 'table2', name: '테이블석 B', desc: '두 번째 4인용 테이블', price: 4500, rank: 3, icon: 'u_table', req: 'expand2' },
     { id: 'staff', name: '알바생 고용', desc: '기다리는 주문을 자동으로 서빙해 준다', price: 7000, rank: 3, icon: 'u_staff' },
   ];
   const UPGM = {}; UPG.forEach(u => (UPGM[u.id] = u));
@@ -60,17 +62,26 @@
   // ---- quarter-view interior layout (world tiles → A.iso) ----
   const IS = A.iso, IL = A.IL;
   const KX = [0, 1, 2, 3, 4, 5, 6, 7];            // counter seats fill from the pot outward
-  const DOOR = [-0.35, 6.2], DOOR_IN = 0.65, AIS_A = 4.2, AIS_B = 7.38, HUBX = 11.1, STOOL_GY = 3.42;
-  const S_IDLE = [11.4, 3.7], S_PASS = [11.05, 2.55], CHEF_AT = [0.42, 1.12];
-  const TABLES = { A: [4.6, 6.1], B: [8.5, 6.1] };
+  // positions that depend on the shop size are refreshed by applyLayout()
+  const DOOR_IN = 0.65, AIS_A = 4.2, STOOL_GY = 3.42, CHEF_AT = [0.42, 1.12];
+  const TABLES = { A: [4.4, 5.95], B: [8.6, 5.95] };
+  let DOOR, AIS_B, HUBX, S_IDLE, S_PASS, POT;
   const worldGy = (x, y) => ((y - IL.OY) / IL.HH - (x - IL.OX) / IL.HW) / 2;
-  const POT = (() => {
+  function calcPot() {
     const [a, b, c, d] = IL.POT, pts = [];
     [IL.CH, IL.CH + 5].forEach(h => [[a, b], [c, b], [c, d], [a, d]].forEach(([x, y]) => pts.push(IS(x, y, h))));
     const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
     const ctr = IS((a + c) / 2, (b + d) / 2, IL.CH + 5);
     return { x0: Math.min(...xs) - 2, x1: Math.max(...xs) + 2, y0: Math.min(...ys) - 2, y1: Math.max(...ys) + 2, cx: ctr[0], cy: ctr[1], in: [a + 0.1, b + 0.07, c - 0.1, d - 0.07] };
-  })();
+  }
+  function applyLayout(lv) {
+    A.setLayout(lv);
+    const cEnd = IL.CTR[1];
+    DOOR = [-0.35, (IL.ENT[0] + IL.ENT[1]) / 2]; AIS_B = IL.GY - 0.32; HUBX = cEnd + 0.35;
+    S_PASS = [cEnd + 0.3, 2.55]; S_IDLE = [Math.min(cEnd + 0.6, IL.GX - 0.3), 3.7];
+    POT = calcPot();
+  }
+  applyLayout(0);
   const dirOf = (dx, dy) => (dy < -0.01 ? 'up' : dx < 0 ? 'left' : 'right');
   // ---- quarter-view street (A.isoE) ----
   const IE = A.isoE;
@@ -119,6 +130,9 @@
     E.lanternN = () => 2 + (P.up.lantern1 ? 2 : 0);
 
     function buildSeats() {
+      if (P.up.table1 || P.up.seat2) P.up.expand1 = true;
+      if (P.up.table2) P.up.expand1 = P.up.expand2 = true;
+      applyLayout(P.up.expand2 ? 2 : P.up.expand1 ? 1 : 0);
       const seats = [], door = IS(DOOR[0], DOOR[1]);
       const pt = (gx, gy, lift) => { const q = IS(gx, gy); return [q[0], q[1] - lift]; };
       const route = (aisle, gx, x, y) => [door, IS(DOOR_IN, DOOR[1]), IS(DOOR_IN, aisle), IS(gx, aisle), [x, y]];
@@ -143,6 +157,16 @@
         });
       });
       E.seats = seats; E.tables = tables;
+      // the room may have changed size: put everyone back where they belong
+      s.customers.forEach(c => {
+        const ns = seats.find(x => x.id === c.seat.id); if (!ns) return;
+        c.seat = ns; c.bub = null;
+        if (c.st === 'walk' || c.st === 'leave') {
+          c.path = (c.st === 'walk' ? ns.path : ns.path.slice().reverse()).map(q => q.slice());
+          c.pi = Math.min(Math.max(1, c.pi), c.path.length - 1); [c.x, c.y] = c.path[c.pi - 1];
+        } else { c.x = ns.x; c.y = ns.y; }
+      });
+      if (s.staff) { if (s.staff.dish) s.staff.dish.items.forEach(id => (P.stock[id] = (P.stock[id] || 0) + 1)); s.customers.forEach(c => (c.claimed = false)); s.staff = null; }
       dirty = true;
     }
 
@@ -529,10 +553,10 @@
       // izakaya neon — a panel sticking out of the facade
       const nOn = !(Math.sin(t * 13) > 0.96 || t % 6.3 < 0.12);
       A.fX(c, 3.0, 3.8, 42, 78, INK, 3.25); A.fX(c, 3.05, 3.75, 43, 77, '#1a1020', 3.25);
-      { const q = IE(3.25, 3.4, 74); if (nOn) { glow(c, q[0], q[1] + 16, 32, '#ff3f8f', 0.55); A.vtext(c, '선술집', q[0], q[1], '#ffe0f0', 10, '#ff4fa0', 10); } else A.vtext(c, '선술집', q[0], q[1], '#5a2a40', 10, null, 10); }
+      { const q = IE(3.25, 3.4, 72); if (nOn) { glow(c, q[0], q[1] + 16, 32, '#ff3f8f', 0.55); A.vtext(c, '선술집', q[0] + 0.5, q[1] - 2, '#ffe0f0', 10, '#ff4fa0', 11); } else A.vtext(c, '선술집', q[0] + 0.5, q[1] - 2, '#5a2a40', 10, null, 11); }
       // snack bar neon on the right building
       const n2 = !(Math.sin(t * 9 + 2) > 0.97);
-      { const q = IE(12.7, 3, 79); if (n2) { glow(c, q[0], q[1] + 4, 34, '#30c8ff', 0.5); ptext(c, '스낵바', q[0], q[1], '#e0fbff', 12, 'center', '#20a8ff'); } else ptext(c, '스낵바', q[0], q[1], '#20404a', 12, 'center'); }
+      { const q = IE(12.7, 3.05, 76); R(c, q[0] - 25, q[1] - 4, 50, 18, INK); R(c, q[0] - 24, q[1] - 3, 48, 16, '#141020'); if (n2) { glow(c, q[0], q[1] + 4, 34, '#30c8ff', 0.5); ptext(c, '스낵바', q[0], q[1], '#e0fbff', 12, 'center', '#20a8ff'); } else ptext(c, '스낵바', q[0], q[1], '#20404a', 12, 'center'); }
       G([14.1, 3.55, 30], 28, '#6a9aff', 0.45);
       if (P.up.sign) G([10.45, 3.55, 16], 24, '#ffe070', 0.35);
       // street lamp cone
@@ -547,7 +571,7 @@
         const g0 = d0 + i * nw, off = Math.round(Math.sin(t * 2 + i * 1.3));
         A.fF(c, g0, g0 + nw - 0.03, 30 - off, 47, '#141a40'); A.fF(c, g0 + 0.03, g0 + nw - 0.06, 31 - off, 47, '#22306a'); A.fF(c, g0 + 0.03, g0 + nw - 0.06, 44, 47, '#30418a');
       }
-      { const q = IE((d0 + d1) / 2, 3, 43); ptext(c, '오뎅', q[0], q[1], '#f4ecd8', 12, 'center'); }
+      { const q = IE((d0 + d1) / 2, 3, 38.5); ptext(c, '오뎅', q[0], q[1] - 5, '#f4ecd8', 10, 'center'); }
       // lanterns
       const LT = extLanterns();
       if (P.up.lantern2) { const a = IE(4.0, 3.78, 54), b = IE(10.0, 3.78, 54); A.line(c, a[0], a[1], b[0], b[1], INK); }
@@ -621,14 +645,16 @@
       return { pose: 'sit', mood: '' };
     }
     function intLanterns() {
-      const L = [[...IS(1.0, 0.3, IL.WH - 3), 1], [...IS(0.3, 5.3, IL.WH - 3), 1]];
-      if (P.up.lantern1) L.push([...IS(0.3, 3.35, IL.WH - 3), 1], [...IS(0.3, 7.3, IL.WH - 3), 1]);
+      const lg = IL.POSTER ? (IL.POSTER[1] + IL.ENT[0]) / 2 : 2.6;
+      const L = [[...IS(1.0, 0.3, IL.WH - 3), 1], [...IS(0.3, lg, IL.WH - 3), 1]];
+      if (P.up.lantern1) L.push([...IS(0.3, 1.0, IL.WH - 3), 1], [...IS(Math.min(9.2, IL.GX - 0.5), 0.3, IL.WH - 3), 1]);
       return L;
     }
     function drawInterior(c) {
       const t = s.t;
       c.drawImage(bgIn, 0, 0);
       // window view (live rain) — clipped to the slanted window on the left wall
+      if (IL.WIN) {
       const [w0, w1, wh0, wh1] = IL.WIN;
       const wp = [IS(0, w0, wh1), IS(0, w1, wh1), IS(0, w1, wh0), IS(0, w0, wh0)];
       const wx0 = Math.min(...wp.map(q => q[0])), wx1 = Math.max(...wp.map(q => q[0])), wy0 = Math.min(...wp.map(q => q[1])), wy1 = Math.max(...wp.map(q => q[1]));
@@ -641,6 +667,7 @@
       c.restore();
       [1 / 3, 2 / 3].forEach(k => A.wL(c, w0 + (w1 - w0) * k - 0.04, w0 + (w1 - w0) * k + 0.04, wh0, wh1, '#4a2a16'));
       A.wL(c, w0, w1, (wh0 + wh1) / 2 - 1, (wh0 + wh1) / 2 + 1, '#4a2a16');
+      }
       // clock hands (game clock 18:00 + minutes)
       const ck = IS(0, 1.1, 52), mins = 18 * 60 + s.clock;
       const ha = ((mins / 60) % 12) / 12 * Math.PI * 2 - Math.PI / 2, ma = (mins % 60) / 60 * Math.PI * 2 - Math.PI / 2;
@@ -697,8 +724,8 @@
       IL2.forEach(([x, y, sz], i) => lantern(c, x, y, t, i + 3, sz, null));
       if (P.up.lantern2) {
         const pts = [];
-        for (let g = 7.2; g >= 0.5; g -= 1) pts.push(IS(0.2, g, IL.WH - 2));
-        for (let g = 0.6; g <= 11.6; g += 1) pts.push(IS(g, 0.2, IL.WH - 2));
+        for (let g = IL.GY - 0.5; g >= 0.5; g -= 1) pts.push(IS(0.2, g, IL.WH - 2));
+        for (let g = 0.6; g <= IL.GX - 0.4; g += 1) pts.push(IS(g, 0.2, IL.WH - 2));
         for (let i = 1; i < pts.length; i++) A.line(c, pts[i - 1][0], pts[i - 1][1] + 2, pts[i][0], pts[i][1] + 2, INK);
         pts.forEach((q, i) => lantern(c, q[0], q[1], t, i, 0, null));
       }

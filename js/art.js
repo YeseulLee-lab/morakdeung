@@ -80,6 +80,17 @@
     lh = lh || size;
     [...str].forEach((ch, i) => ptext(c, ch, x, y + i * lh, col, size, 'center', ol));
   }
+  // text painted onto an iso wall: each pixel column is shifted by `slope` so the letters lie on the wall
+  // (+0.5 = walls/facades running down-right, -0.5 = walls running down-left)
+  function stext(c, str, x, y, col, size = 12, align = 'center', ol = null, slope = 0.5) {
+    const cv = txt(str, size, col, ol), w = cv.width;
+    const x0 = Math.round(align === 'center' ? x - w / 2 : align === 'right' ? x - w : x), mid = align === 'center' ? w / 2 : align === 'right' ? w : 0;
+    for (let i = 0; i < w; i++) c.drawImage(cv, i, 0, 1, cv.height, x0 + i, Math.round(y) - 2 + Math.round((i - mid) * slope), 1, cv.height);
+  }
+  function svtext(c, str, x, y, col, size = 10, ol = null, lh, slope = 0.5) {
+    lh = lh || size;
+    [...str].forEach((ch, i) => stext(c, ch, x, y + i * lh, col, size, 'center', ol, slope));
+  }
 
   // ---------- 3x5 digit font for floating numbers ----------
   const F3 = {
@@ -152,6 +163,8 @@
       { k: INK, s: '#f4ead8', B: '#2c3c78', b: '#5a70c0' }],
     u_staff: [['...kkkkk....', '..kHHHHHk...', '.kHHHHHHHk..', '.kHFFFFFHk..', '.kFkFFFkFk..', '.kFFFFFFFk..', '.kFpFFFpFk..', '..kFFFFFk...', '...kPPPk....', '..kPWWWPk...', '..kPWWWPk...', '............'],
       { k: INK, H: '#3a2420', F: '#f6d0a8', p: '#f08a8a', P: '#d86a8a', W: '#f4f0e8' }],
+    u_expand: [['............', '.....kk.....', '....kRRk....', '...kRrRRk...', '..kRRRRRRk..', '.kkkkkkkkkk.', '.kWWWWWWWWk.', '.kWkkWWkkWk.', '.kWkYWWkYWk.', '.kWWWWWWWWk.', '.kkkkkkkkkk.', '............'],
+      { k: INK, R: '#c03a3a', r: '#ff7a5a', W: '#e8cc90', Y: '#ffd27a' }],
     coin: [['............', '...kkkkkk...', '..kYYYYYYk..', '.kYyyYYYYOk.', '.kYyYkkYYOk.', '.kYYYkkYYOk.', '.kYYYYYYYOk.', '.kYYYYYYOOk.', '..kOOOOOOk..', '...kkkkkk...', '............', '............'],
       { k: '#3a2408', Y: '#f2c040', y: '#fff2a0', O: '#c08020' }],
   };
@@ -415,8 +428,8 @@
     fF(c, -3, 4, 0, 40, '#4a2e1e'); for (let g = -2.8; g < 4; g += 0.3) isoLine(c, iso(g, 3, 0), iso(g, 3, 40), '#3a2216');
     fF(c, -2.5, -0.6, 10, 32, '#20120a'); fF(c, -2.4, -0.7, 11, 31, '#f2b860'); lattice(c, -2.4, -0.7, 11, 31, 0.42, 5, '#9a6030');
     fF(c, 0.3, 3.3, 0, 36, '#20120a'); fF(c, 0.4, 3.2, 0, 35, '#f2b860'); lattice(c, 0.4, 3.2, 0, 35, 0.4, 6, '#9a6030'); fF(c, 0.4, 3.2, 0, 10, '#5e3820');
-    fF(c, 0.2, 3.4, 26, 38, '#26357a'); [1.0, 1.8, 2.6].forEach(g => isoLine(c, iso(g, 3, 26), iso(g, 3, 38), '#141c48'));
-    { const p = iso(1.8, 3, 35); ptext(c, '선술집', p[0], p[1] - 1, '#f2ead6', 10, 'center'); }
+    fF(c, 0.2, 3.4, 22, 40, '#26357a'); [1.0, 2.6].forEach(g => isoLine(c, iso(g, 3, 22), iso(g, 3, 40), '#141c48'));
+    { const p = iso(1.8, 3, 31); ptext(c, '선술집', p[0], p[1] - 4, '#f2ead6', 8, 'center'); }
     tiles(c, -3.2, 4.0, 3, 44, 3.6, 38, '#2c3246', '#232838', '#3a4260');
     fF(c, -2.2, 0.2, 52, 66, '#121424'); fF(c, -2.1, 0.1, 53, 65, '#f6c46e'); fF(c, -2.1, -1.5, 53, 65, '#c0703e'); fF(c, -0.5, 0.1, 53, 65, '#c0703e');
     fF(c, 1.2, 3.4, 52, 66, '#121424'); fF(c, 1.3, 3.3, 53, 65, '#2a3456');
@@ -446,8 +459,11 @@
       fF(c, a, b, 0, 10, '#6e4224'); isoLine(c, iso(a, 3, 10), iso(b, 3, 10), '#8a5530');
     });
     // blackboard menu
-    fF(c, 8.2, 9.7, 7, 39, '#8a5530'); fF(c, 8.3, 9.6, 8, 38, '#22342a');
-    { const p = iso(8.95, 3, 37); ptext(c, '오늘의', p[0], p[1], '#f4f0e0', 8, 'center'); ptext(c, '추천', p[0], p[1] + 9, '#ffe08a', 10, 'center'); ptext(c, '무', p[0], p[1] + 21, '#f4f0e0', 8, 'center'); ptext(c, '소힘줄', p[0], p[1] + 30, '#ffb0a0', 8, 'center'); }
+    fF(c, 8.25, 9.65, 14, 38, '#3a2014'); fF(c, 8.3, 9.6, 15, 37, '#ffcf78'); lattice(c, 8.3, 9.6, 15, 37, 0.33, 6, '#9a6634'); // small side window
+    { const p = iso(9.0, 3.45); // standing menu board facing the street
+      R(c, p[0] - 13, p[1] - 38, 27, 34, '#5e3820'); R(c, p[0] - 12, p[1] - 37, 25, 32, '#8a5530'); R(c, p[0] - 10, p[1] - 35, 21, 28, '#22342a');
+      R(c, p[0] - 11, p[1] - 4, 2, 5, '#3a2014'); R(c, p[0] + 10, p[1] - 4, 2, 5, '#3a2014');
+      ptext(c, '추천', p[0], p[1] - 34, '#ffe08a', 10, 'center'); ptext(c, '무', p[0], p[1] - 23, '#f4f0e0', 8, 'center'); ptext(c, '소힘줄', p[0], p[1] - 15, '#ffb0a0', 8, 'center'); }
     // eave (hisashi) over the ground floor
     tiles(c, s0 - 0.2, s1 + 0.2, 3, 62, 3.75, 54, '#2a3044', '#1c2030', '#48526f');
     box(c, s0 - 0.2, 3.7, s1 + 0.2, 3.8, 52, 54, '#5a6488', '#141826', '#141826', null);
@@ -460,7 +476,7 @@
     { const p = iso(6.4, 3, 71); disc(c, p[0], p[1] - 14, 4, 4, '#e8b468'); R(c, p[0] - 6, p[1] - 10, 12, 10, '#e8b468'); }
     lattice(c, 5.7, 8.3, 71, 94, 0.43, 8, '#a8743a'); fF(c, 6.97, 7.03, 71, 94, '#3a2014');
     fF(c, 8.95, 9.75, 74, 86, '#80848e'); for (let g = 9.05; g < 9.7; g += 0.12) isoLine(c, iso(g, 3, 76), iso(g, 3, 84), '#5a5e68');
-    if (o.rank >= 1) { fF(c, 5.9, 8.1, 63, 70, INK); fF(c, 5.95, 8.05, 64, 69, '#d8a860'); const p = iso(7, 3, 69); ptext(c, '오뎅 모락등', p[0], p[1], '#2a1408', 8, 'center'); }
+    if (o.rank >= 1) { const p = iso(7, 3.05, 66); R(c, p[0] - 24, p[1] - 7, 48, 13, INK); R(c, p[0] - 23, p[1] - 6, 46, 11, '#6e4224'); R(c, p[0] - 21, p[1] - 4, 42, 7, '#d8a860'); ptext(c, '오뎅 모락등', p[0], p[1] - 4, '#2a1408', 8, 'center'); }
     // pitched roof
     tiles(c, s0 - 0.25, s1 + 0.25, 1.4, 118, 3.45, 97, '#30374e', '#232838', '#454e6e');
     poly(c, [iso(s1 + 0.25, 1.4, 118), iso(s1 + 0.25, 3.45, 97), iso(s1 + 0.25, 1.4, 97)], '#262c40');
@@ -474,7 +490,6 @@
     tiles(c, 10.6, 14.6, 3, 40, 3.45, 35, '#c03a3a', '#a02a2a', '#e05a5a');
     fF(c, 10.8, 13.4, 0, 36, '#4a4e62'); for (let h = 2; h < 36; h += 3) isoLine(c, iso(10.8, 3, h), iso(13.4, 3, h), '#3a3e50');
     fF(c, 13.6, 14.8, 0, 30, '#121424'); fF(c, 13.7, 14.7, 0, 29, '#2a3048');
-    fF(c, 11.0, 14.4, 66, 82, '#141020'); // neon backing (lit live)
     // far right block
     box(c, 15, 0.3, 22, 3, 0, 96, '#20243c', '#2a2e4a', '#1e2238');
     for (let h = 18; h < 90; h += 16) for (let g = 15.5; g < 21; g += 1.2) { const lit = r() < 0.25; fF(c, g, g + 0.6, h, h + 9, lit ? '#6a5a32' : '#1a1e34'); }
@@ -583,7 +598,7 @@
     for (let g = 0.5; g < 2.1; g += 0.5) isoLine(c, iso(0, g), iso(GX, g), '#3e3848');
     for (let g = 0.5; g < GX; g += 0.5) isoLine(c, iso(g, 0), iso(g, 2.1), '#3e3848');
     isoLine(c, iso(0, 2.1), iso(GX, 2.1), '#2c2836');
-    flr(c, 0.4, 1.05, 10.4, 1.75, 0, '#2a2630'); for (let g = 0.7; g < 10.4; g += 0.3) isoLine(c, iso(g, 1.05), iso(g, 1.75), '#22202a'); // anti-fatigue mat
+    const mE = Math.min(10.4, IL.CTR[1]); flr(c, 0.4, 1.05, mE, 1.75, 0, '#2a2630'); for (let g = 0.7; g < mE; g += 0.3) isoLine(c, iso(g, 1.05), iso(g, 1.75), '#22202a'); // anti-fatigue mat
     c.fillStyle = 'rgba(40,16,6,0.30)'; poly(c, quadF(0, 0, GX, 0.22, 0)); poly(c, quadF(0, 0.22, 0.22, GY, 0));
 
     // ---- back-right wall (behind the kitchen): white tiles + plaster ----
@@ -642,30 +657,35 @@
     isoLine(c, iso(8.12, 0.9, 1), iso(8.12, 0.9, 51), '#8a8e9a');
     { const a = iso(8.02, 0.9, 32), b = iso(8.22, 0.9, 32); R(c, a[0], a[1] - 10, 1, 10, '#6a6e7a'); R(c, b[0], b[1] - 10, 1, 10, '#6a6e7a'); }
     { const p = iso(8.12, 0.9, 46); R(c, p[0] - 6, p[1] - 3, 12, 3, '#3a6ac8'); }
+    if (GX >= 10.5) {
     // cabinet with microwave + rice cooker
     box(c, 8.95, 0.05, 10.2, 0.85, 0, 18, '#8a5530', '#6e4224', '#5a341c');
     box(c, 9.05, 0.1, 9.85, 0.75, 18, 28, '#e0e0e6', '#c8c8d0', '#a8a8b4');
     { wR(c, 9.15, 9.6, 20, 26, '#2a2e3a', 0.75); const q = iso(9.75, 0.75, 24); R(c, q[0], q[1] - 1, 2, 2, '#6ad06a'); }
     box(c, 9.95, 0.25, 10.15, 0.6, 18, 24, '#f0ece0', '#d8d0c0', '#c0b8a8');
+    }
+    if (GX >= 11.2) {
     // water / ice dispenser
     box(c, 10.45, 0.05, 11.15, 0.75, 0, 34, '#d8dce4', '#e8ecf2', '#b8bcc8');
     { const p = iso(10.8, 0.75, 22); R(c, p[0] - 4, p[1] - 8, 8, 8, '#2a2e3a'); R(c, p[0] - 1, p[1] - 8, 2, 3, '#b8bcc8'); R(c, p[0] - 4, p[1] - 14, 8, 3, '#3a8ad8'); }
     box(c, 10.5, 0.1, 11.1, 0.7, 34, 46, '#c8e8ff', '#a8d0f0', '#88b0d8');
+    }
     // air conditioner high on the wall
     box(c, 7.6, 0.0, 9.0, 0.35, 54, 61, '#f0f0f4', '#d8d8e0', '#c0c0c8'); isoLine(c, iso(7.7, 0.35, 55), iso(8.9, 0.35, 55), '#9a9aa8');
     // menu board + hanging tags (above the prep table / sink)
-    wR(c, 4.0, 7.3, 51, 61, '#2a160c'); wR(c, 4.06, 7.24, 52, 60, '#c8944e'); wR(c, 4.06, 7.24, 59, 60, '#e4b470');
-    { const p = iso(5.65, 0, 59); ptext(c, '오뎅', p[0], p[1] - 1, '#2a1408', 12, 'center'); }
-    const tags = ['무', '달걀', '곤약', '어묵', '유부', '떡', '한펜', '완자'];
-    tags.forEach((tg, i) => {
-      const g0 = 4.0 + i * 0.41;
-      wR(c, g0, g0 + 0.37, 25, 49, '#2a160c'); wR(c, g0 + 0.04, g0 + 0.33, 26, 48, '#e8cc90');
-      const p = iso(g0 + 0.185, 0, 47); vtext(c, tg, p[0] + 0.5, p[1], '#3a1a0a', 10, null, 10);
+    wR(c, 4.95, 6.35, 41, 63, '#2a160c'); wR(c, 5.0, 6.3, 42, 62, '#c8944e'); wR(c, 5.0, 6.3, 61, 62, '#e4b470');
+    { const p = iso(5.65, 0, 52); ptext(c, '오뎅', p[0], p[1] - 5, '#2a1408', 10, 'center'); }
+    const tags = [['무', 4.06], ['달걀', 4.6], ['곤약', 6.42], ['어묵', 6.96]];
+    tags.forEach(([tg, g0]) => {
+      wR(c, g0, g0 + 0.5, 15, 40, '#2a160c'); wR(c, g0 + 0.05, g0 + 0.45, 16, 39, '#e8cc90');
+      const p = iso(g0 + 0.25, 0, 27.5), n = [...tg].length;
+      vtext(c, tg, p[0], p[1] - (n * 9) / 2 + 1, '#3a1a0a', 8, null, 9);
     });
     // bottle shelves over the cabinet
-    [38, 50].forEach(h => { wR(c, 9.0, 11.6, h - 2, h, '#5e3820'); wR(c, 9.0, 11.6, h - 3, h - 2, '#3a2014'); });
+    const sE = Math.min(11.6, GX - 0.3);
+    if (sE > 9.6) [38, 50].forEach(h => { wR(c, 9.0, sE, h - 2, h, '#5e3820'); wR(c, 9.0, sE, h - 3, h - 2, '#3a2014'); });
     let g = 9.1;
-    while (g < 11.4) {
+    while (g < sE - 0.2) {
       const kind = r(), p = iso(g, 0.08, 50);
       if (kind < 0.35) { R(c, p[0] - 2, p[1] - 12, 5, 12, INK); R(c, p[0] - 1, p[1] - 11, 3, 11, '#2e6a3a'); R(c, p[0] - 1, p[1] - 9, 3, 3, '#f4ead0'); R(c, p[0], p[1] - 15, 1, 3, INK); }
       else if (kind < 0.65) { R(c, p[0] - 2, p[1] - 9, 6, 9, INK); R(c, p[0] - 1, p[1] - 8, 4, 8, '#f2eee2'); R(c, p[0] - 1, p[1] - 5, 4, 1, '#3a5aa8'); }
@@ -678,22 +698,24 @@
     for (let gg = 0.45; gg < 1.9; gg += 0.5) { const p = iso(0.06, gg, 40); R(c, p[0] - 3, p[1] - 9, 7, 9, INK); R(c, p[0] - 2, p[1] - 8, 5, 8, '#c8a060'); }
     { const p = iso(0, 1.1, 52); disc(c, p[0], p[1], 7, 7, '#3a2014'); disc(c, p[0], p[1], 5, 5, '#f4ead0'); }
     // ---- hall side of the left wall: window (view painted live), poster, entrance ----
-    wL(c, IL.WIN[0] - 0.1, IL.WIN[1] + 0.1, IL.WIN[2] - 3, IL.WIN[3] + 3, '#4a2a16');
-    wL(c, 4.45, 5.15, 23, 53, '#2a160c'); wL(c, 4.5, 5.1, 24, 52, '#f4ead0'); wL(c, 4.5, 5.1, 44, 52, '#c8322a');
-    { const p = iso(0, 4.8, 42); vtext(c, '사케', p[0], p[1], '#3a1a0a', 10, null, 10); }
+    if (IL.WIN) wL(c, IL.WIN[0] - 0.1, IL.WIN[1] + 0.1, IL.WIN[2] - 3, IL.WIN[3] + 3, '#4a2a16');
+    const [po0, po1] = IL.POSTER || [2.4, 3.1];
+    wL(c, po0, po1, 23, 53, '#2a160c'); wL(c, po0 + 0.05, po1 - 0.05, 24, 52, '#f4ead0'); wL(c, po0 + 0.05, po1 - 0.05, 44, 52, '#c8322a');
+    { const p = iso(0, (po0 + po1) / 2, 34); vtext(c, '사케', p[0] + 0.5, p[1] - 10, '#3a1a0a', 10, null, 10); }
     const [e0, e1] = IL.ENT;
     wL(c, e0 - 0.15, e1 + 0.15, 0, 49, '#2a160c');
     wL(c, e0, e1, 0, 46, '#101222');
     for (let k = 0; k < 14; k++) { const p = iso(0, e0 + 0.05 + r() * (e1 - e0 - 0.1), 3 + r() * 40); R(c, p[0], p[1], 1, 3, '#3a4468'); }
     for (let i = 0; i < 3; i++) { const g0 = e0 + i * (e1 - e0) / 3, g1 = g0 + (e1 - e0) / 3 - 0.03; wL(c, g0, g1, 26, 46, '#141a40'); wL(c, g0 + 0.03, g1 - 0.03, 27, 46, '#22306a'); wL(c, g0 + 0.03, g1 - 0.03, 43, 46, '#30418a'); }
-    { const p = iso(0, (e0 + e1) / 2, 40); ptext(c, '오뎅', p[0], p[1] - 4, '#f4ecd8', 8, 'center'); }
+    { const p = iso(0, (e0 + e1) / 2, 36); ptext(c, '오뎅', p[0], p[1] - 4, '#f4ecd8', 8, 'center'); }
     flr(c, -0.06, e0 - 0.05, 0.12, e1 + 0.05, 0, '#8a8478');
     flr(c, 0.3, e0 + 0.05, 1.3, e1 - 0.05, 0, '#3a2a20'); flr(c, 0.35, e0 + 0.1, 1.25, e1 - 0.1, 0, '#5a4a6a');
     for (let gg = e0 + 0.25; gg < e1 - 0.1; gg += 0.18) isoLine(c, iso(0.35, gg), iso(1.25, gg), '#4a3a5a');
-    box(c, 0.15, 7.0, 0.5, 7.35, 0, 12, '#3a2014', '#5e3820', '#4a2a16');
-    { const p = iso(0.32, 7.17, 12); line(c, p[0] - 2, p[1], p[0] - 3, p[1] - 12, '#2a4a8a'); line(c, p[0], p[1], p[0] + 1, p[1] - 14, '#a83a2a'); line(c, p[0] + 2, p[1], p[0] + 4, p[1] - 10, '#2a6a4a'); }
+    const ub = e1 + 0.6 < GY ? e1 + 0.2 : e0 - 0.55;
+    box(c, 0.15, ub, 0.5, ub + 0.35, 0, 12, '#3a2014', '#5e3820', '#4a2a16');
+    { const p = iso(0.32, ub + 0.17, 12); line(c, p[0] - 2, p[1], p[0] - 3, p[1] - 12, '#2a4a8a'); line(c, p[0], p[1], p[0] + 1, p[1] - 14, '#a83a2a'); line(c, p[0] + 2, p[1], p[0] + 4, p[1] - 10, '#2a6a4a'); }
     // plant in the front-right corner
-    { const p = iso(11.55, 7.3); box(c, 11.33, 7.08, 11.77, 7.52, 0, 11, '#3a2a1a', '#8a5530', '#6a3e22');
+    { const pg = GX - 0.45, pq = GY - 0.4, p = iso(pg, pq); box(c, pg - 0.22, pq - 0.22, pg + 0.22, pq + 0.22, 0, 11, '#3a2a1a', '#8a5530', '#6a3e22');
       disc(c, p[0], p[1] - 20, 9, 8, '#2e5a2e'); disc(c, p[0] - 3, p[1] - 24, 5, 5, '#3e7a3a'); disc(c, p[0] + 4, p[1] - 18, 4, 4, '#3e7a3a'); disc(c, p[0] + 1, p[1] - 27, 3, 3, '#5a9a4a'); }
   }
 
@@ -715,13 +737,13 @@
     let p = iso(2.95, 2.75, CH); R(c, p[0] - 2, p[1] - 10, 5, 10, INK); R(c, p[0] - 1, p[1] - 9, 3, 9, '#2a1410'); R(c, p[0] - 1, p[1] - 9, 3, 2, '#c82a2a');
     p = iso(3.4, 2.8, CH); R(c, p[0] - 3, p[1] - 7, 7, 7, INK); R(c, p[0] - 2, p[1] - 4, 5, 3, '#d0a010'); R(c, p[0] - 2, p[1] - 6, 5, 2, '#fff080');
     // chopstick holders along the guests' edge
-    [5.2, 7.05, 8.9].forEach(gg => { const q = iso(gg, 2.8, CH); R(c, q[0] - 3, q[1] - 6, 6, 6, INK); R(c, q[0] - 2, q[1] - 5, 4, 2, '#7a5430'); R(c, q[0] - 2, q[1] - 3, 4, 2, '#5a3a20'); R(c, q[0] - 1, q[1] - 7, 1, 2, '#e0c890'); R(c, q[0] + 1, q[1] - 7, 1, 2, '#e0c890'); });
+    [5.4, 7.0, 8.6].filter(gg => gg < c1 - 1.4).forEach(gg => { const q = iso(gg, 2.8, CH); R(c, q[0] - 3, q[1] - 6, 6, 6, INK); R(c, q[0] - 2, q[1] - 5, 4, 2, '#7a5430'); R(c, q[0] - 2, q[1] - 3, 4, 2, '#5a3a20'); R(c, q[0] - 1, q[1] - 7, 1, 2, '#e0c890'); R(c, q[0] + 1, q[1] - 7, 1, 2, '#e0c890'); });
     // draft-beer server: tower with two taps + drip tray
-    box(c, 9.55, 2.25, 10.15, 2.55, CH, CH + 2, '#8a8e9a', '#6a6e7a', '#4a4e5a');
-    { const q = iso(9.85, 2.35, CH + 2); R(c, q[0] - 1, q[1] - 14, 3, 14, '#c8ccd6'); R(c, q[0] - 4, q[1] - 15, 9, 3, '#b8bcc8'); R(c, q[0] - 4, q[1] - 21, 2, 6, '#2a2a30'); R(c, q[0] + 3, q[1] - 21, 2, 6, '#c8322a'); R(c, q[0] - 1, q[1] - 12, 3, 4, '#e8b030'); }
+    box(c, c1 - 1.2, 2.25, c1 - 0.6, 2.55, CH, CH + 2, '#8a8e9a', '#6a6e7a', '#4a4e5a');
+    { const q = iso(c1 - 0.9, 2.35, CH + 2); R(c, q[0] - 1, q[1] - 14, 3, 14, '#c8ccd6'); R(c, q[0] - 4, q[1] - 15, 9, 3, '#b8bcc8'); R(c, q[0] - 4, q[1] - 21, 2, 6, '#2a2a30'); R(c, q[0] + 3, q[1] - 21, 2, 6, '#c8322a'); R(c, q[0] - 1, q[1] - 12, 3, 4, '#e8b030'); }
     // cash register
-    box(c, 10.2, 2.2, 10.7, 2.65, CH, CH + 6, '#3a3e4a', '#2a2e3a', '#1e2230');
-    { const q = iso(10.45, 2.3, CH + 6); R(c, q[0] - 4, q[1] - 7, 8, 6, '#1e2230'); R(c, q[0] - 3, q[1] - 6, 6, 4, '#5ad0a0'); }
+    box(c, c1 - 0.52, 2.2, c1 - 0.04, 2.65, CH, CH + 6, '#3a3e4a', '#2a2e3a', '#1e2230');
+    { const q = iso(c1 - 0.28, 2.3, CH + 6); R(c, q[0] - 4, q[1] - 7, 8, 6, '#1e2230'); R(c, q[0] - 3, q[1] - 6, 6, 4, '#5ad0a0'); }
   }
 
   function paintPartition(c) { /* the kitchen sits behind the counter now — nothing in front */ }
@@ -734,14 +756,24 @@
     isoLine(c, iso(x0, y1, TH), iso(x1, y1, TH), '#e0a468'); isoLine(c, iso(x0, y0, TH), iso(x0, y1, TH), '#d0925a');
     const p = iso(cx, cy, TH); R(c, p[0] - 3, p[1] - 7, 6, 7, INK); R(c, p[0] - 2, p[1] - 6, 4, 2, '#ffffff'); R(c, p[0] - 2, p[1] - 4, 4, 3, '#e0d8c8'); R(c, p[0] - 2, p[1] - 6, 4, 1, '#c8322a');
   }
-  IL.WIN = [2.5, 4.2, 26, 50];
-  IL.ENT = [5.6, 6.8];
-  IL.CTR = [0.5, 10.75, 2.1, 2.95];
+  // shop size levels — 0: small counter shop, 1: 가게 확장 (hall + longer counter), 2: 가게 확장 2
+  const LV = [
+    { GX: 9.6, GY: 4.7, cEnd: 8.8, ENT: [3.45, 4.55], WIN: null, POSTER: null },
+    { GX: 11.2, GY: 7.5, cEnd: 10.35, ENT: [5.45, 6.65], WIN: [2.5, 4.2, 26, 50], POSTER: [4.45, 5.15] },
+    { GX: 12.6, GY: 7.8, cEnd: 10.35, ENT: [5.75, 6.95], WIN: [2.5, 4.2, 26, 50], POSTER: [4.45, 5.15] },
+  ];
+  function setLayout(lv) {
+    const L = LV[lv];
+    Object.assign(IL, { LV: lv, GX: L.GX, GY: L.GY, ENT: L.ENT, WIN: L.WIN, POSTER: L.POSTER, CTR: [0.5, L.cEnd, 2.1, 2.95] });
+    IL.OX = Math.round(240 - (IL.GX - IL.GY) * IL.HW / 2);
+    IL.OY = Math.max(64, Math.round((326 - (IL.GX + IL.GY) * IL.HH) / 2));
+  }
+  setLayout(0);
 
   Object.assign(A, {
-    R, disc, ellipseLine, line, glow, ptext, vtext, num, numW, spr, SPR, iconURL, BLOB, chibi, bubble, dish, lantern,
+    R, disc, ellipseLine, line, glow, ptext, vtext, stext, svtext, num, numW, spr, SPR, iconURL, BLOB, chibi, bubble, dish, lantern,
     paintExteriorBG, paintInteriorBG, paintCounter, paintPartition, table, srand,
-    IL, EX, XS, PUD, iso: isoI, isoE, proj, fF, fX, polePainter, poly, flr, wR, wL, box, stool, isoLine, quadF,
+    IL, EX, XS, PUD, setLayout, iso: isoI, isoE, proj, fF, fX, polePainter, poly, flr, wR, wL, box, stool, isoLine, quadF,
     clearText() { TXT.clear(); },
   });
   window.ART = A;
