@@ -44,6 +44,8 @@
     { id: 'pot2', name: '특대 구리 냄비', desc: '칸 12개 · 준비 최대 10개 · 더 빨리 끓는다', price: 5000, rank: 2, icon: 'u_pot', req: 'pot1' },
     { id: 'table2', name: '테이블석 B', desc: '두 번째 4인용 테이블', price: 4500, rank: 3, icon: 'u_table', req: 'expand2' },
     { id: 'staff', name: '알바생 고용', desc: '기다리는 주문을 자동으로 서빙해 준다', price: 7000, rank: 3, icon: 'u_staff' },
+    { id: 'staff2', name: '알바생 추가 고용', desc: '알바생이 한 명 더 늘어난다 (2명)', price: 9000, rank: 3, icon: 'u_staff', req: 'staff' },
+    { id: 'staff3', name: '알바생 한 명 더', desc: '알바생 3명이 함께 서빙한다', price: 14000, rank: 3, icon: 'u_staff', req: 'staff2' },
   ];
   const UPGM = {}; UPG.forEach(u => (UPGM[u.id] = u));
   const LOOKS = [
@@ -57,7 +59,11 @@
     { id: 'gran', name: '할머니', skin: '#f0c8a0', hair: '#d8d8d8', hs: 'bun', top: '#8a5a8a', bottom: '#5a4a5a', pat: 55, tip: 1.4 },
   ];
   const CHEF = { skin: '#eab88a', hair: '#2a2220', hs: 'chef', band: '#f4f4f0', top: '#f4f4f0', bottom: '#3a3a4a', apron: '#2a3a6a' };
-  const STAFF = { skin: '#f6d0a8', hair: '#3a2420', hs: 'bun', top: '#d86a8a', bottom: '#5a3a4a', apron: '#f4f0e8' };
+  const STAFFS = [
+    { skin: '#f6d0a8', hair: '#3a2420', hs: 'bun', top: '#d86a8a', bottom: '#5a3a4a', apron: '#f4f0e8' },
+    { skin: '#eab88a', hair: '#1e1a1a', hs: 'short', top: '#4a9a6a', bottom: '#3a3a4a', apron: '#f4f0e8' },
+    { skin: '#f2c79a', hair: '#7a4a2a', hs: 'bob', top: '#4a6ac8', bottom: '#3a3a5a', apron: '#f4f0e8' },
+  ];
   const UMB = [['#3a5aa8', '#6a8ad8'], ['#c84a4a', '#f08080'], ['#e8e4dc', '#ffffff'], ['#2a2a30', '#5a5a66'], ['#3a8a5a', '#6ac08a'], ['#d8a030', '#ffd070']];
   // ---- quarter-view interior layout (world tiles → A.iso) ----
   const IS = A.iso, IL = A.IL;
@@ -113,7 +119,7 @@
     Object.defineProperty(E, 'P', { get: () => P });
     const s = {
       scene: 'title', t: 0, clock: 0, customers: [], fx: [], steam: [], peds: [], drops: [], splash: [], ripples: [],
-      order: null, trans: null, spawnT: 2, day: null, closed: false, staff: null, chef: { serve: 0 }, simmer: {},
+      order: null, trans: null, spawnT: 2, day: null, closed: false, staffs: [], chef: { serve: 0 }, simmer: {},
       hover: null, hoverShop: false, demo: null, pedT: 0.5, saveT: 0, lastOrderToast: false, closing: false,
     };
     E.s = s;
@@ -166,7 +172,7 @@
           c.pi = Math.min(Math.max(1, c.pi), c.path.length - 1); [c.x, c.y] = c.path[c.pi - 1];
         } else { c.x = ns.x; c.y = ns.y; }
       });
-      if (s.staff) { if (s.staff.dish) s.staff.dish.items.forEach(id => (P.stock[id] = (P.stock[id] || 0) + 1)); s.customers.forEach(c => (c.claimed = false)); s.staff = null; }
+      s.staffs.forEach(st => { if (st.dish) st.dish.items.forEach(id => (P.stock[id] = (P.stock[id] || 0) + 1)); }); s.customers.forEach(c => (c.claimed = false)); s.staffs = [];
       dirty = true;
     }
 
@@ -183,7 +189,7 @@
     }
     E.save = save;
     function resetTransient() {
-      s.customers = []; s.fx = []; s.order = null; s.trans = null; s.staff = null; s.simmer = {};
+      s.customers = []; s.fx = []; s.order = null; s.trans = null; s.staffs = []; s.simmer = {};
       s.closed = false; s.closing = false; s.spawnT = 2; s.day = freshDay(); s.hover = null; s.hoverShop = false; s.lastOrderToast = false;
     }
     E.newGame = function () {
@@ -333,7 +339,7 @@
           if (open) { closeOrder(true); }
           toast(`${c.look.name}${josa(c.look.name, '이', '가')} 화가 나서 돌아갔어요…`, 'bad'); sfx('bad');
           s.fx.push({ k: 'emote', e: 'anger', x: c.x, y: c.y - 30, t: 0, life: 1.4 });
-          if (c.claimed && s.staff) { c.claimed = false; }
+          c.claimed = false;
         }
       } else if (c.st === 'eat') {
         if (c.ft > 0.32) { c.ft = 0; c.f++; }
@@ -403,13 +409,21 @@
     }
 
     // ---------------- staff (part-timer) ----------------
+    E.staffN = () => (P.up.staff ? 1 : 0) + (P.up.staff2 ? 1 : 0) + (P.up.staff3 ? 1 : 0);
+    const ST_OFF = [0, 0.5, -0.5];
     function updStaff(dt) {
-      if (!P.up.staff) { s.staff = null; return; }
-      let st = s.staff;
-      if (!st) { const q = IS(S_IDLE[0], S_IDLE[1]); st = s.staff = { x: q[0], y: q[1], dir: 'down', f: 0, ft: 0, st: 'idle', t: 0, path: null, pi: 0, target: null, dish: null, appr: null }; }
+      const n = E.staffN();
+      while (s.staffs.length > n) s.staffs.pop();
+      while (s.staffs.length < n) {
+        const i = s.staffs.length, home = [S_IDLE[0], S_IDLE[1] + ST_OFF[i]], q = IS(home[0], home[1]);
+        s.staffs.push({ i, look: STAFFS[i], home, pass: [S_PASS[0], S_PASS[1] - 0.25 + i * 0.3], x: q[0], y: q[1], dir: 'down', f: 0, ft: Math.random() * 0.1, st: 'idle', t: i * 0.4, path: null, pi: 0, target: null, dish: null, appr: null });
+      }
+      s.staffs.forEach(st => updOneStaff(st, dt));
+    }
+    function updOneStaff(st, dt) {
       st.t += dt; st.ft += dt;
       const walkW = pts => { st.path = [[st.x, st.y], ...pts.map(q => IS(q[0], q[1]))]; st.pi = 1; };
-      const goBack = () => { st.st = 'back'; const a = st.appr; walkW(a ? [[a.to[0], a.aisle], [HUBX, a.aisle], S_IDLE] : [S_IDLE]); st.appr = null; };
+      const goBack = () => { st.st = 'back'; const a = st.appr; walkW(a ? [[a.to[0], a.aisle], [HUBX, a.aisle], st.home] : [st.home]); st.appr = null; };
       if (st.path) {
         if (st.ft > 0.14) { st.ft = 0; st.f++; }
         const spd = 52, tg = st.path[st.pi]; const dx = tg[0] - st.x, dy = tg[1] - st.y, d = Math.hypot(dx, dy);
@@ -426,10 +440,12 @@
           st.dish = null; goBack();
         } else if (st.st === 'back') { st.st = 'idle'; st.dir = 'down'; }
       }
-      if (st.st === 'idle' && st.t > 1.2) {
-        const c = s.customers.find(c => c.st === 'order' && !(s.order && s.order.cid === c.id) && c.t > 4 && !c.claimed);
-        if (c) { c.claimed = true; st.target = c.id; st.st = 'toPass'; walkW([S_PASS]); }
-      } else if (st.st === 'pick' && st.t > 1.4) {
+      if (st.st === 'idle' && st.t > 1.0) {
+        // take the most impatient order nobody else is handling
+        const c = s.customers.filter(c => c.st === 'order' && !(s.order && s.order.cid === c.id) && c.t > 3 && !c.claimed)
+          .sort((a, b) => a.pat / a.patMax - b.pat / b.patMax)[0];
+        if (c) { c.claimed = true; st.target = c.id; st.st = 'toPass'; walkW([st.pass]); }
+      } else if (st.st === 'pick' && st.t > 1.2) {
         const c = getC(st.target);
         if (!c || c.st !== 'order') { goBack(); return; }
         const items = []; let ok = true;
@@ -693,7 +709,7 @@
       else { R(c, ch[0] - 5, ch[1] - 13, 10, 3, INK); R(c, ch[0] - 4, ch[1] - 14, 8, 2, '#f0ece0'); }
       const actors = [];
       s.customers.forEach(cu => actors.push({ y: cu.y, draw: () => { const pm = custPose(cu); chibi(c, cu.x, cu.y, cu.look, { dir: cu.dir, pose: pm.pose, f: cu.f, mood: pm.mood }); } }));
-      if (s.staff) { const st = s.staff; actors.push({ y: st.y, draw: () => { chibi(c, st.x, st.y, STAFF, { dir: st.dir, pose: st.path ? 'walk' : 'stand', f: st.f, hold: !!st.dish }); if (st.dish) dish(c, st.x, st.y - 14, st.dish.items, st.dish.karashi); } }); }
+      s.staffs.forEach(st => { actors.push({ y: st.y, draw: () => { chibi(c, st.x, st.y, st.look, { dir: st.dir, pose: st.path ? 'walk' : 'stand', f: st.f, hold: !!st.dish }); if (st.dish) dish(c, st.x, st.y - 14, st.dish.items, st.dish.karashi); } }); });
       // counter (+ pot body, counter stools)
       c.drawImage(bgCtr, 0, 0);
       // pot contents: slots laid out on the iso broth surface
@@ -769,7 +785,8 @@
         placed.push({ x0, x1, y0: yb - h - 8, y1: yb + 3 });
         cu.layout = { hx, yy, w, h, head };
       });
-      s.customers.forEach(cu => {
+      const drawOrder = s.customers.slice().sort((a, b) => (a.st === 'order' ? -urgency(a) : -2) - (b.st === 'order' ? -urgency(b) : -2) + (a.id === s.hover) - (b.id === s.hover));
+      drawOrder.forEach(cu => {
         cu.hit = null;
         if (cu.st !== 'think' && cu.st !== 'order') { cu.bub = null; return; }
         const { hx, yy, w, head } = cu.layout;
@@ -781,14 +798,17 @@
         }
         const ents = Object.entries(cu.order.items), hov = s.hover === cu.id;
         const low = cu.pat / cu.patMax < 0.3, lift = low ? Math.round(Math.abs(Math.sin(t * 10)) * 2) : 0;
-        const { bx, by } = bubble(c, hx, yy - lift, w, 16, hov ? '#fff2c0' : '#fff8ea', hov ? '#c83a1a' : INK);
+        const urgent = cu.pat / cu.patMax < 0.35, blink = urgent && Math.sin(t * 12) > 0;
+        if (urgent) { R(c, hx - w / 2 - 3, yy - lift - 24, w + 6, 25, blink ? '#ff5a3a' : '#c8352a'); }
+        const { bx, by } = bubble(c, hx, yy - lift, w, 16, hov ? '#fff2c0' : '#fff8ea', hov || urgent ? '#c83a1a' : INK);
         let ix = bx + 2;
         ents.forEach(([iid, q]) => { spr(c, iid, ix, by + 2, 1); if (q > 1) num(c, String(q), ix + 11, by + 9, '#ffffff', 'center', '#c83a1a'); ix += 13; });
         if (cu.order.karashi) { spr(c, 'karashi', ix, by + 2, 1); ix += 13; }
         if (cu.order.sake) { spr(c, 'sake', ix, by + 2, 1); ix += 13; }
         const pr = clamp(cu.pat / cu.patMax, 0, 1);
         R(c, bx, by - 4, w, 3, INK); R(c, bx + 1, by - 3, Math.max(0, Math.round((w - 2) * pr)), 1, pr > 0.5 ? '#6ad06a' : pr > 0.25 ? '#f0c040' : '#f04a3a');
-        if (hov || Math.sin(t * 6) > 0.3) num(c, '!', bx + w + 2, by + 1, '#ffd24a', 'left', INK, 1);
+        if (urgent) num(c, '!', bx + w + 3, by - 2, '#ff5a3a', 'left', INK, 2);
+        else if (hov || Math.sin(t * 6) > 0.3) num(c, '!', bx + w + 2, by + 1, '#ffd24a', 'left', INK, 1);
         cu.hit = [Math.min(bx - 2, hx - 8), by - 6, Math.max(w + 4, 16), Math.round(cu.y) - by + 6];
       });
       drawFx(c);
@@ -925,13 +945,14 @@
     // =====================================================
     function hitShop(x, y) { return inPoly(x, y, SHOP_POLY); }
     function hitPot(x, y) { return x >= POT.x0 && x <= POT.x1 && y >= POT.y0 && y <= POT.y1; }
+    const urgency = c => c.pat / c.patMax;
     function custAt(x, y) {
-      for (let i = s.customers.length - 1; i >= 0; i--) {
-        const c = s.customers[i];
-        if (c.st !== 'order') continue;
-        if (c.hit && x >= c.hit[0] && x <= c.hit[0] + c.hit[2] && y >= c.hit[1] && y <= c.hit[1] + c.hit[3]) return c;
-        if (Math.abs(x - c.x) <= 8 && y <= c.y && y >= c.y - 26) return c;
+      const ord = s.customers.filter(c => c.st === 'order').sort((a, b) => urgency(a) - urgency(b));
+      for (const c of ord) {
+        const pad = urgency(c) < 0.35 ? 6 : 0;
+        if (c.hit && x >= c.hit[0] - pad && x <= c.hit[0] + c.hit[2] + pad && y >= c.hit[1] - pad && y <= c.hit[1] + c.hit[3] + pad) return c;
       }
+      for (const c of ord) if (Math.abs(x - c.x) <= 8 && y <= c.y && y >= c.y - 26) return c;
       return null;
     }
     function potHit(x, y) {
