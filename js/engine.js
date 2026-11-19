@@ -59,10 +59,10 @@
   const UMB = [['#3a5aa8', '#6a8ad8'], ['#c84a4a', '#f08080'], ['#e8e4dc', '#ffffff'], ['#2a2a30', '#5a5a66'], ['#3a8a5a', '#6ac08a'], ['#d8a030', '#ffd070']];
   // ---- quarter-view interior layout (world tiles → A.iso) ----
   const IS = A.iso, IL = A.IL;
-  const KX = [3, 4, 2, 5, 1, 6, 0, 7];            // counter seats fill from the pot outward
-  const DOOR = [9.15, -0.35], AIS_C = 0.95, AIS_A = 4.65, AIS_B = 7.2, HUBX = 8.55, CTR_GY = 2.25;
-  const S_IDLE = [8.9, 3.7], S_PASS = [8.45, 2.8], CHEF_AT = [3.15, 3.55];
-  const TABLES = { A: [2.4, 5.85], B: [6.1, 5.85] };
+  const KX = [0, 1, 2, 3, 4, 5, 6, 7];            // counter seats fill from the pot outward
+  const DOOR = [-0.35, 6.2], DOOR_IN = 0.65, AIS_A = 4.2, AIS_B = 7.38, HUBX = 11.1, STOOL_GY = 3.42;
+  const S_IDLE = [11.4, 3.7], S_PASS = [11.05, 2.55], CHEF_AT = [0.42, 1.12];
+  const TABLES = { A: [4.6, 6.1], B: [8.5, 6.1] };
   const worldGy = (x, y) => ((y - IL.OY) / IL.HH - (x - IL.OX) / IL.HW) / 2;
   const POT = (() => {
     const [a, b, c, d] = IL.POT, pts = [];
@@ -121,10 +121,11 @@
     function buildSeats() {
       const seats = [], door = IS(DOOR[0], DOOR[1]);
       const pt = (gx, gy, lift) => { const q = IS(gx, gy); return [q[0], q[1] - lift]; };
+      const route = (aisle, gx, x, y) => [door, IS(DOOR_IN, DOOR[1]), IS(DOOR_IN, aisle), IS(gx, aisle), [x, y]];
       for (let i = 0; i < E.counterSeats(); i++) {
-        const gx = 1.0 + KX[i] * 0.95, gy = 1.75, [x, y] = pt(gx, gy, 3), b = IS(gx - 0.05, 2.52, IL.CH);
-        seats.push({ id: 'c' + i, type: 'c', gx, gy, x, y, dir: 'down', bowl: { x: b[0], y: b[1] },
-          path: [door, IS(DOOR[0], AIS_C), IS(gx, AIS_C), [x, y]], appr: { to: [gx + 0.5, AIS_C + 0.1], aisle: AIS_C } });
+        const gx = 5.0 + KX[i] * 0.8, gy = STOOL_GY, [x, y] = pt(gx, gy, 3), b = IS(gx + 0.42, 2.62, IL.CH);
+        seats.push({ id: 'c' + i, type: 'c', gx, gy, x, y, dir: 'up', bowl: { x: b[0], y: b[1] },
+          path: route(AIS_A, gx, x, y), appr: { to: [gx + 0.5, AIS_A - 0.1], aisle: AIS_A } });
       }
       const tables = [];
       if (P.up.table1) tables.push({ id: 'A' });
@@ -135,10 +136,10 @@
           const gx = cx + dx, side = dx < 0 ? -1 : 1;
           let [x, y] = pt(gx, cy - 0.9, 1), b = IS(gx, cy - 0.28, IL.TH);
           seats.push({ id: 't' + t.id + 'u' + i, type: 'tt', table: t.id, gx, gy: cy - 0.9, x, y, dir: 'down', bowl: { x: b[0], y: b[1] },
-            path: [door, IS(DOOR[0], AIS_A), IS(gx, AIS_A), [x, y]], appr: { to: [gx + side * 0.55, AIS_A + 0.1], aisle: AIS_A } });
+            path: route(AIS_A, gx, x, y), appr: { to: [gx + side * 0.55, AIS_A + 0.25], aisle: AIS_A } });
           [x, y] = pt(gx, cy + 0.95, 1); b = IS(gx, cy + 0.28, IL.TH);
           seats.push({ id: 't' + t.id + 'd' + i, type: 'tb', table: t.id, gx, gy: cy + 0.95, x, y, dir: 'up', bowl: { x: b[0], y: b[1] },
-            path: [door, IS(DOOR[0], AIS_B), IS(gx, AIS_B), [x, y]], appr: { to: [gx + side * 0.55, AIS_B - 0.25], aisle: AIS_B } });
+            path: route(AIS_B, gx, x, y), appr: { to: [gx + side * 0.55, AIS_B - 0.2], aisle: AIS_B } });
         });
       });
       E.seats = seats; E.tables = tables;
@@ -620,8 +621,8 @@
       return { pose: 'sit', mood: '' };
     }
     function intLanterns() {
-      const L = [[...IS(2.4, 0.3, IL.WH - 3), 1], [...IS(6.6, 0.3, IL.WH - 3), 1]];
-      if (P.up.lantern1) L.push([...IS(0.3, 1.9, IL.WH - 3), 1], [...IS(0.3, 6.9, IL.WH - 3), 1]);
+      const L = [[...IS(1.0, 0.3, IL.WH - 3), 1], [...IS(0.3, 5.3, IL.WH - 3), 1]];
+      if (P.up.lantern1) L.push([...IS(0.3, 3.35, IL.WH - 3), 1], [...IS(0.3, 7.3, IL.WH - 3), 1]);
       return L;
     }
     function drawInterior(c) {
@@ -641,14 +642,17 @@
       [1 / 3, 2 / 3].forEach(k => A.wL(c, w0 + (w1 - w0) * k - 0.04, w0 + (w1 - w0) * k + 0.04, wh0, wh1, '#4a2a16'));
       A.wL(c, w0, w1, (wh0 + wh1) / 2 - 1, (wh0 + wh1) / 2 + 1, '#4a2a16');
       // clock hands (game clock 18:00 + minutes)
-      const ck = IS(0, 1.25, 46), mins = 18 * 60 + s.clock;
+      const ck = IS(0, 1.1, 52), mins = 18 * 60 + s.clock;
       const ha = ((mins / 60) % 12) / 12 * Math.PI * 2 - Math.PI / 2, ma = (mins % 60) / 60 * Math.PI * 2 - Math.PI / 2;
       A.line(c, ck[0], ck[1], ck[0] + Math.cos(ha) * 3, ck[1] + Math.sin(ha) * 3, INK); A.line(c, ck[0], ck[1], ck[0] + Math.cos(ma) * 5, ck[1] + Math.sin(ma) * 5, '#8a2a20');
-      // guests behind the counter (counter seats, back aisle) — the counter is drawn over them
+      // the chef — that's you — behind the pot, facing the hall
+      const serve = s.chef.serve > 0, cf = Math.floor(t * 3) % 2, ch = IS(CHEF_AT[0], CHEF_AT[1]);
+      chibi(c, ch[0], ch[1], CHEF, { dir: 'down', pose: 'stand', f: 0, hold: serve, mood: serve ? 'happy' : '' });
+      if (!serve) { const lx = ch[0] + 6 + cf, ly = ch[1] - 9 + cf; A.line(c, lx, ly, lx + 5, ly + 9, '#c8c8d0'); R(c, lx - 1, ly - 1, 2, 2, '#eab88a'); }
+      else { R(c, ch[0] - 5, ch[1] - 13, 10, 3, INK); R(c, ch[0] - 4, ch[1] - 14, 8, 2, '#f0ece0'); }
       const actors = [];
-      s.customers.forEach(cu => actors.push({ y: cu.y, gy: worldGy(cu.x, cu.y), draw: () => { const pm = custPose(cu); chibi(c, cu.x, cu.y, cu.look, { dir: cu.dir, pose: pm.pose, f: cu.f, mood: pm.mood }); } }));
-      if (s.staff) { const st = s.staff; actors.push({ y: st.y, gy: worldGy(st.x, st.y), draw: () => { chibi(c, st.x, st.y, STAFF, { dir: st.dir, pose: st.path ? 'walk' : 'stand', f: st.f, hold: !!st.dish }); if (st.dish) dish(c, st.x, st.y - 14, st.dish.items, st.dish.karashi); } }); }
-      actors.filter(o => o.gy < CTR_GY).sort((a, b) => a.y - b.y).forEach(o => o.draw());
+      s.customers.forEach(cu => actors.push({ y: cu.y, draw: () => { const pm = custPose(cu); chibi(c, cu.x, cu.y, cu.look, { dir: cu.dir, pose: pm.pose, f: cu.f, mood: pm.mood }); } }));
+      if (s.staff) { const st = s.staff; actors.push({ y: st.y, draw: () => { chibi(c, st.x, st.y, STAFF, { dir: st.dir, pose: st.path ? 'walk' : 'stand', f: st.f, hold: !!st.dish }); if (st.dish) dish(c, st.x, st.y - 14, st.dish.items, st.dish.karashi); } }); }
       // counter (+ pot body, counter stools)
       c.drawImage(bgCtr, 0, 0);
       // pot contents: slots laid out on the iso broth surface
@@ -680,27 +684,21 @@
           if (cu.bowl.sake) { R(c, bw.x + 9, bw.y - 7, 4, 7, INK); R(c, bw.x + 10, bw.y - 6, 2, 6, '#f2eee2'); }
         }
       });
-      // the chef — that's you — working the pot with your back to the camera
-      const serve = s.chef.serve > 0, cf = Math.floor(t * 3) % 2, ch = IS(CHEF_AT[0], CHEF_AT[1]);
-      chibi(c, ch[0], ch[1], CHEF, { dir: 'up', pose: 'stand', f: 0, hold: serve });
-      if (!serve) { const lx = ch[0] + 5 + cf, ly = ch[1] - 14 - cf; A.line(c, lx, ly, lx + 6, ly - 4, '#c8c8d0'); R(c, lx - 1, ly, 2, 2, '#eab88a'); disc(c, lx + 7, ly - 4, 2, 1, '#c8c8d0'); }
-      else { R(c, ch[0] - 5, ch[1] - 13, 10, 3, INK); R(c, ch[0] - 4, ch[1] - 14, 8, 2, '#f0ece0'); }
-      c.drawImage(bgFr, 0, 0);
       // depth-sorted floor things in the dining area (iso: screen y == gx + gy)
-      const list = actors.filter(o => o.gy >= CTR_GY);
+      const list = actors;
       E.tables.forEach(tb => list.push({ y: tb.y, draw: () => {
         A.table(c, tb.gx, tb.gy);
         s.customers.forEach(cu => { if ((cu.st === 'eat' || cu.st === 'done') && cu.seat.table === tb.id && cu.bowl) dish(c, cu.seat.bowl.x, cu.seat.bowl.y, cu.bowl.items.slice(0, eatLeft(cu)), cu.bowl.karashi); });
       } }));
-      E.seats.forEach(se => { if (se.type !== 'c') list.push({ y: se.y - 0.5, draw: () => A.stool(c, se.gx, se.gy, '#8a5530', '#5a3420', '#b07040', 7) }); });
+      E.seats.forEach(se => list.push({ y: se.y - 0.5, draw: () => (se.type === 'c' ? A.stool(c, se.gx, se.gy) : A.stool(c, se.gx, se.gy, '#8a5530', '#5a3420', '#b07040', 7)) }));
       list.sort((a, b) => a.y - b.y).forEach(o => o.draw());
       // lanterns hung along the wall tops
       const IL2 = intLanterns();
       IL2.forEach(([x, y, sz], i) => lantern(c, x, y, t, i + 3, sz, null));
       if (P.up.lantern2) {
         const pts = [];
-        for (let g = 7.0; g >= 0.5; g -= 1) pts.push(IS(0.2, g, IL.WH - 2));
-        for (let g = 0.6; g <= 10.0; g += 1) pts.push(IS(g, 0.2, IL.WH - 2));
+        for (let g = 7.2; g >= 0.5; g -= 1) pts.push(IS(0.2, g, IL.WH - 2));
+        for (let g = 0.6; g <= 11.6; g += 1) pts.push(IS(g, 0.2, IL.WH - 2));
         for (let i = 1; i < pts.length; i++) A.line(c, pts[i - 1][0], pts[i - 1][1] + 2, pts[i][0], pts[i][1] + 2, INK);
         pts.forEach((q, i) => lantern(c, q[0], q[1], t, i, 0, null));
       }
@@ -708,7 +706,8 @@
       s.steam.forEach(p => { if (p.w !== 'in') return; c.globalAlpha = (1 - p.t / p.life) * 0.3; disc(c, p.x, p.y, p.r, p.r * 0.8, '#fff6e6'); });
       c.globalAlpha = 1;
       // speech bubbles — laid out so neighbours on the diagonal counter never overlap
-      const placed = [];
+      const chP = IS(CHEF_AT[0], CHEF_AT[1]);
+      const placed = [{ x0: chP[0] - 14, x1: chP[0] + 14, y0: chP[1] - 32, y1: chP[1] - 4 }];
       s.customers.filter(cu => cu.st === 'think' || cu.st === 'order').sort((a, b) => b.y - a.y || a.x - b.x).forEach(cu => {
         const hx = Math.round(cu.x), head = Math.round(cu.y) - 26;
         let w, h;
@@ -1130,7 +1129,7 @@
       s.demo = { t: 0, cx: 300, cy: 40, cap: '', snap, gen: null };
       s.demo.gen = demoScript();
       const c1 = spawn({ prefer: ['c0'] }), c2 = spawn({ prefer: ['c1'] }), c3 = spawn({ prefer: ['c2'] });
-      [c1, c2, c3].forEach((c, i) => { if (!c) return; const q = c.path, k = 0.1 + i * 0.3; c.x = q[1][0] + (q[2][0] - q[1][0]) * k; c.y = q[1][1] + (q[2][1] - q[1][1]) * k; c.pi = 2; if (i === 2) c.order.karashi = true; if (i === 0) c.order = { items: { daikon: 1, tamago: 1, chikuwa: 1 }, karashi: false, sake: false }; });
+      [c1, c2, c3].forEach((c, i) => { if (!c) return; const q = c.path, k = 0.75 - i * 0.25; c.x = q[2][0] + (q[3][0] - q[2][0]) * k; c.y = q[2][1] + (q[3][1] - q[2][1]) * k; c.pi = 3; if (i === 2) c.order.karashi = true; if (i === 0) c.order = { items: { daikon: 1, tamago: 1, chikuwa: 1 }, karashi: false, sake: false }; });
       s.spawnT = 99;
       E.emit('demo', true);
     };

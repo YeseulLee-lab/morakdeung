@@ -511,7 +511,7 @@
   // ISOMETRIC (quarter view) helpers — 2:1 pixel iso
   // world: gx runs to screen down-right, gy to screen down-left, h is height in px
   // =====================================================
-  const IL = { GX: 10.4, GY: 7.5, HW: 22, HH: 11, OX: 208, OY: 69, WH: 64, CH: 16, TH: 14, POT: [3.5, 2.33, 5.15, 3.07] };
+  const IL = { GX: 12, GY: 7.7, HW: 20, HH: 10, OX: 197, OY: 70, WH: 64, CH: 18, TH: 14, POT: [0.95, 2.18, 2.7, 2.87] };
   const EX = { GX: 0, GY: 0, HW: 22, HH: 11, HS: 1.22, OX: 152, OY: 84 };
   let PJ = IL; // projection used by the drawing helpers below (interior by default)
   function iso(gx, gy, h) { return [PJ.OX + (gx - gy) * PJ.HW, PJ.OY + (gx + gy) * PJ.HH - (h || 0) * (PJ.HS || 1)]; }
@@ -565,14 +565,12 @@
 
   function paintInteriorBG(c, o) {
     const r = srand(5), { GX, GY, WH } = IL;
-    // void around the diorama
     R(c, 0, 0, W, H, '#0c0a12');
     for (let i = 0; i < 140; i++) R(c, r() * W, r() * H, 1, 1, r() < 0.5 ? '#14111c' : '#100d16');
-    // slab under the floor (cut-away edges)
     poly(c, [iso(0, GY, 0), iso(GX, GY, 0), iso(GX, GY, -8), iso(0, GY, -8)], '#3a2216');
     poly(c, [iso(GX, -0.3, 0), iso(GX, GY, 0), iso(GX, GY, -8), iso(GX, -0.3, -8)], '#24140c');
     isoLine(c, iso(0, GY, -1), iso(GX, GY, -1), '#5e3820'); isoLine(c, iso(GX, GY, -1), iso(GX, -0.3, -1), '#3a2216');
-    // ---- floor: planks run along gx ----
+    // ---- floor: wooden hall, tiled kitchen behind the counter ----
     for (let g = 0, k = 0; g < GY; g += 0.5, k++) {
       flr(c, 0, g, GX, g + 0.5, 0, k % 2 ? '#9a6436' : '#a66c3a');
       isoLine(c, iso(0, g), iso(GX, g), '#6e4224');
@@ -581,128 +579,152 @@
       while (x < GX) { isoLine(c, iso(x, g), iso(x, g + 0.5), '#6e4224'); x += 2.6 + ((k * 7) % 5) * 0.35; }
       for (let q = 0; q < 10; q++) { const p = iso(r() * GX, g + 0.12 + r() * 0.3); R(c, p[0], p[1], 2, 1, '#8e5a30'); }
     }
-    // kitchen tiles behind the counter
-    flr(c, 0, 2.25, 8.4, 4.4, 0, '#4c4656');
-    for (let g = 2.75; g < 4.4; g += 0.5) isoLine(c, iso(0, g), iso(8.4, g), '#3e3848');
-    for (let g = 0.5; g < 8.4; g += 0.5) isoLine(c, iso(g, 2.25), iso(g, 4.4), '#3e3848');
-    isoLine(c, iso(8.4, 2.25), iso(8.4, 4.4), '#2c2836');
-    // soft occlusion where floor meets walls
+    flr(c, 0, 0, GX, 2.1, 0, '#4c4656');
+    for (let g = 0.5; g < 2.1; g += 0.5) isoLine(c, iso(0, g), iso(GX, g), '#3e3848');
+    for (let g = 0.5; g < GX; g += 0.5) isoLine(c, iso(g, 0), iso(g, 2.1), '#3e3848');
+    isoLine(c, iso(0, 2.1), iso(GX, 2.1), '#2c2836');
+    flr(c, 0.4, 1.05, 10.4, 1.75, 0, '#2a2630'); for (let g = 0.7; g < 10.4; g += 0.3) isoLine(c, iso(g, 1.05), iso(g, 1.75), '#22202a'); // anti-fatigue mat
     c.fillStyle = 'rgba(40,16,6,0.30)'; poly(c, quadF(0, 0, GX, 0.22, 0)); poly(c, quadF(0, 0.22, 0.22, GY, 0));
 
-    // ---- back-right wall (gy = 0) ----
+    // ---- back-right wall (behind the kitchen): white tiles + plaster ----
     wR(c, 0, GX, 0, WH, '#dcc08a');
-    for (let h = 18; h < 58; h += 3) for (let g = (h % 2) * 0.17; g < GX; g += 0.45) { const p = iso(g, 0, h); R(c, p[0], p[1], 1, 1, '#cfb27c'); }
-    wR(c, 0, GX, 0, 16, '#7a4a28');
-    for (let g = 0.2; g < GX; g += 0.5) isoLine(c, iso(g, 0, 0), iso(g, 0, 16), '#5a341c');
-    wR(c, 0, GX, 16, 18, '#4a2a16');
+    for (let h = 44; h < 58; h += 3) for (let g = (h % 2) * 0.17; g < GX; g += 0.45) { const p = iso(g, 0, h); R(c, p[0], p[1], 1, 1, '#cfb27c'); }
+    wR(c, 0, GX, 0, 42, '#e8e2d4');
+    for (let h = 7; h < 42; h += 7) isoLine(c, iso(0, 0, h), iso(GX, 0, h), '#c8c0b0');
+    for (let g = 0.4; g < GX; g += 0.4) isoLine(c, iso(g, 0, 0), iso(g, 0, 42), '#d4ccbc');
+    wR(c, 0, GX, 42, 44, '#8a8478');
     wR(c, 0, GX, 57, WH, '#3a2014'); isoLine(c, iso(0, 0, 57), iso(GX, 0, 57), '#24120a');
-    // ---- back-left wall (gx = 0) — a shade darker, it faces away from the light ----
+    // ---- back-left wall: kitchen tiles at the back, wood + plaster along the hall ----
     wL(c, 0, GY, 0, WH, '#c9ab76');
     for (let h = 18; h < 58; h += 3) for (let g = (h % 2) * 0.17; g < GY; g += 0.45) { const p = iso(0, g, h); R(c, p[0], p[1], 1, 1, '#bb9e6a'); }
-    wL(c, 0, GY, 0, 16, '#6a3e22');
-    for (let g = 0.2; g < GY; g += 0.5) isoLine(c, iso(0, g, 0), iso(0, g, 16), '#4e2c18');
-    wL(c, 0, GY, 16, 18, '#40240f');
-    wL(c, 2.25, 4.4, 0, 44, '#d4cebf'); // kitchen tiles
-    for (let h = 7; h < 44; h += 7) isoLine(c, iso(0, 2.25, h), iso(0, 4.4, h), '#b8b0a0');
-    for (let g = 2.65; g < 4.4; g += 0.4) isoLine(c, iso(0, g, 0), iso(0, g, 44), '#c4bcac');
+    wL(c, 2.1, GY, 0, 16, '#6a3e22');
+    for (let g = 2.3; g < GY; g += 0.5) isoLine(c, iso(0, g, 0), iso(0, g, 16), '#4e2c18');
+    wL(c, 2.1, GY, 16, 18, '#40240f');
+    wL(c, 0, 2.1, 0, 42, '#d4cebf');
+    for (let h = 7; h < 42; h += 7) isoLine(c, iso(0, 0, h), iso(0, 2.1, h), '#b8b0a0');
+    for (let g = 0.4; g < 2.1; g += 0.4) isoLine(c, iso(0, g, 0), iso(0, g, 42), '#c4bcac');
     wL(c, 0, GY, 57, WH, '#30190f'); isoLine(c, iso(0, 0, 57), iso(0, GY, 57), '#1e0e08');
-    // posts
-    [[0.0, 'L'], [2.13, 'L'], [4.4, 'L'], [GY - 0.12, 'L']].forEach(([g]) => wL(c, g, g + 0.12, 0, 57, '#5e3820'));
-    [[4.6], [8.28], [GX - 0.12]].forEach(([g]) => wR(c, g, g + 0.12, 0, 57, '#6e4224'));
+    [0.0, 2.05, GY - 0.12].forEach(g => wL(c, g, g + 0.12, 0, 57, '#5e3820'));
+    [GX - 0.12].forEach(g => wR(c, g, g + 0.12, 0, 57, '#6e4224'));
     isoLine(c, iso(0, 0, 0), iso(0, 0, WH), '#4a2a16');
-    // wall top caps (thickness) + end caps — the cut-away look
     poly(c, [iso(-0.3, -0.3, WH), iso(GX, -0.3, WH), iso(GX, 0, WH), iso(0, 0, WH)], '#24120a');
     poly(c, [iso(-0.3, -0.3, WH), iso(0, 0, WH), iso(0, GY, WH), iso(-0.3, GY, WH)], '#1e0e08');
     poly(c, [iso(GX, -0.3, WH), iso(GX, 0, WH), iso(GX, 0, -8), iso(GX, -0.3, -8)], '#4a2a16');
     poly(c, [iso(-0.3, GY, WH), iso(0, GY, WH), iso(0, GY, -8), iso(-0.3, GY, -8)], '#5e3820');
     isoLine(c, iso(GX, 0, WH), iso(GX, 0, -8), '#2a160c'); isoLine(c, iso(0, GY, WH), iso(0, GY, -8), '#2a160c');
 
-    // ---- entrance in the right wall ----
-    wR(c, 8.4, 9.9, 0, 49, '#2a160c');
-    wR(c, 8.55, 9.75, 0, 46, '#101222');
-    for (let k = 0; k < 14; k++) { const p = iso(8.6 + r() * 1.1, 0, 3 + r() * 40); R(c, p[0], p[1], 1, 3, '#3a4468'); }
-    for (let i = 0; i < 3; i++) {
-      const g0 = 8.55 + i * 0.4, g1 = g0 + 0.37;
-      wR(c, g0, g1, 26, 46, '#141a40'); wR(c, g0 + 0.03, g1 - 0.03, 27, 46, '#22306a'); wR(c, g0 + 0.03, g1 - 0.03, 43, 46, '#30418a');
-    }
-    { const p = iso(9.15, 0, 40); ptext(c, '오뎅', p[0], p[1] - 4, '#f4ecd8', 8, 'center'); }
-    flr(c, 8.5, -0.06, 9.8, 0.12, 0, '#8a8478'); isoLine(c, iso(8.5, 0.12), iso(9.8, 0.12), '#b0a898');
-    flr(c, 8.6, 0.35, 9.7, 1.3, 0, '#3a2a20'); flr(c, 8.65, 0.4, 9.65, 1.25, 0, '#5a4a6a');
-    for (let g = 0.55; g < 1.3; g += 0.18) isoLine(c, iso(8.65, g), iso(9.65, g), '#4a3a5a');
-    // umbrella stand by the door
-    box(c, 9.98, 0.3, 10.28, 0.62, 0, 12, '#3a2014', '#5e3820', '#4a2a16');
-    { const p = iso(10.13, 0.46, 12); line(c, p[0] - 2, p[1], p[0] - 3, p[1] - 12, '#2a4a8a'); line(c, p[0], p[1], p[0] + 1, p[1] - 14, '#a83a2a'); line(c, p[0] + 2, p[1], p[0] + 4, p[1] - 10, '#2a6a4a'); }
-
-    // ---- menu board, tags and bottle shelves above the counter guests ----
-    wR(c, 1.1, 4.5, 50, 61, '#2a160c'); wR(c, 1.16, 4.44, 51, 60, '#c8944e'); wR(c, 1.16, 4.44, 59, 60, '#e4b470');
-    { const p = iso(2.8, 0, 59); ptext(c, '오뎅', p[0], p[1] - 1, '#2a1408', 12, 'center'); }
+    // ================= KITCHEN EQUIPMENT along the back wall =================
+    // back-room doorway with a short noren
+    wR(c, 0.35, 1.7, 0, 46, '#2a160c'); wR(c, 0.45, 1.6, 0, 44, '#3a2a24');
+    for (let i = 0; i < 3; i++) { const g0 = 0.45 + i * 0.385; wR(c, g0, g0 + 0.35, 26, 44, '#6a2420'); wR(c, g0 + 0.03, g0 + 0.32, 27, 44, '#a8342a'); }
+    // gas range + two simmering stock pots, exhaust hood above
+    const RG = [2.0, 3.8];
+    box(c, RG[0], 0.05, RG[1], 0.9, 0, 18, '#3a3e4a', '#8a8e9a', '#6a6e7a');
+    for (let g = RG[0] + 0.15; g < RG[1] - 0.1; g += 0.42) isoLine(c, iso(g, 0.9, 3), iso(g, 0.9, 15), '#5a5e6a');
+    [[2.15, 2.85], [3.0, 3.65]].forEach(([a, b], i) => {
+      const p = iso((a + b) / 2, 0.47, 18); glow(c, p[0], p[1], 7, '#4a8aff', 0.5);
+      box(c, a, 0.12, b, 0.82, 18, i ? 30 : 34, '#b8bcc8', '#8a8e9c', '#6a6e7a'); flr(c, a + 0.08, 0.2, b - 0.08, 0.74, i ? 30 : 34, '#5a4030');
+    });
+    box(c, 1.9, 0.0, 3.9, 0.95, 46, 54, '#9a9eaa', '#7a7e8a', '#5a5e6a'); isoLine(c, iso(1.9, 0.95, 46), iso(3.9, 0.95, 46), '#4a4e5a');
+    wR(c, 2.6, 3.2, 54, 64, '#7a7e8a');
+    // stainless prep table with board + knife
+    box(c, 4.0, 0.05, 5.6, 0.85, 0, 18, '#c8ccd6', '#9a9eaa', '#7a7e8a');
+    isoLine(c, iso(4.0, 0.85, 8), iso(5.6, 0.85, 8), '#7a7e8a');
+    box(c, 4.25, 0.2, 5.0, 0.65, 18, 20, '#d8b070', '#b08850', '#906838');
+    { const p = iso(5.3, 0.4, 18); R(c, p[0] - 4, p[1] - 2, 7, 1, '#d8dce4'); R(c, p[0] + 3, p[1] - 2, 3, 1, '#3a2014'); }
+    // sink with faucet and dish rack
+    box(c, 5.8, 0.05, 7.3, 0.85, 0, 18, '#c8ccd6', '#9a9eaa', '#7a7e8a');
+    flr(c, 6.0, 0.2, 6.9, 0.7, 18, '#6a6e7a'); flr(c, 6.08, 0.26, 6.82, 0.64, 18, '#4a4e5a');
+    { const p = iso(6.45, 0.12, 18); R(c, p[0], p[1] - 10, 2, 10, '#b8bcc8'); R(c, p[0] - 3, p[1] - 10, 6, 2, '#b8bcc8'); }
+    for (let k = 0; k < 4; k++) { const p = iso(7.0, 0.25 + k * 0.13, 18); R(c, p[0] - 2, p[1] - 8, 1, 8, '#f0ece0'); R(c, p[0] - 1, p[1] - 8, 3, 8, '#e0d8c8'); }
+    // big double-door fridge
+    box(c, 7.5, 0.05, 8.75, 0.9, 0, 52, '#b0b4c0', '#d8dce4', '#a8acb8');
+    isoLine(c, iso(8.12, 0.9, 1), iso(8.12, 0.9, 51), '#8a8e9a');
+    { const a = iso(8.02, 0.9, 32), b = iso(8.22, 0.9, 32); R(c, a[0], a[1] - 10, 1, 10, '#6a6e7a'); R(c, b[0], b[1] - 10, 1, 10, '#6a6e7a'); }
+    { const p = iso(8.12, 0.9, 46); R(c, p[0] - 6, p[1] - 3, 12, 3, '#3a6ac8'); }
+    // cabinet with microwave + rice cooker
+    box(c, 8.95, 0.05, 10.2, 0.85, 0, 18, '#8a5530', '#6e4224', '#5a341c');
+    box(c, 9.05, 0.1, 9.85, 0.75, 18, 28, '#e0e0e6', '#c8c8d0', '#a8a8b4');
+    { wR(c, 9.15, 9.6, 20, 26, '#2a2e3a', 0.75); const q = iso(9.75, 0.75, 24); R(c, q[0], q[1] - 1, 2, 2, '#6ad06a'); }
+    box(c, 9.95, 0.25, 10.15, 0.6, 18, 24, '#f0ece0', '#d8d0c0', '#c0b8a8');
+    // water / ice dispenser
+    box(c, 10.45, 0.05, 11.15, 0.75, 0, 34, '#d8dce4', '#e8ecf2', '#b8bcc8');
+    { const p = iso(10.8, 0.75, 22); R(c, p[0] - 4, p[1] - 8, 8, 8, '#2a2e3a'); R(c, p[0] - 1, p[1] - 8, 2, 3, '#b8bcc8'); R(c, p[0] - 4, p[1] - 14, 8, 3, '#3a8ad8'); }
+    box(c, 10.5, 0.1, 11.1, 0.7, 34, 46, '#c8e8ff', '#a8d0f0', '#88b0d8');
+    // air conditioner high on the wall
+    box(c, 7.6, 0.0, 9.0, 0.35, 54, 61, '#f0f0f4', '#d8d8e0', '#c0c0c8'); isoLine(c, iso(7.7, 0.35, 55), iso(8.9, 0.35, 55), '#9a9aa8');
+    // menu board + hanging tags (above the prep table / sink)
+    wR(c, 4.0, 7.3, 51, 61, '#2a160c'); wR(c, 4.06, 7.24, 52, 60, '#c8944e'); wR(c, 4.06, 7.24, 59, 60, '#e4b470');
+    { const p = iso(5.65, 0, 59); ptext(c, '오뎅', p[0], p[1] - 1, '#2a1408', 12, 'center'); }
     const tags = ['무', '달걀', '곤약', '어묵', '유부', '떡', '한펜', '완자'];
     tags.forEach((tg, i) => {
-      const g0 = 1.12 + i * 0.42;
-      wR(c, g0, g0 + 0.38, 23, 47, '#2a160c'); wR(c, g0 + 0.04, g0 + 0.34, 24, 46, '#e8cc90');
-      const p = iso(g0 + 0.19, 0, 45); vtext(c, tg, p[0] + 0.5, p[1], '#3a1a0a', 10, null, 10);
+      const g0 = 4.0 + i * 0.41;
+      wR(c, g0, g0 + 0.37, 25, 49, '#2a160c'); wR(c, g0 + 0.04, g0 + 0.33, 26, 48, '#e8cc90');
+      const p = iso(g0 + 0.185, 0, 47); vtext(c, tg, p[0] + 0.5, p[1], '#3a1a0a', 10, null, 10);
     });
-    [36, 49].forEach(h => { wR(c, 5.0, 8.0, h - 2, h, '#5e3820'); wR(c, 5.0, 8.0, h - 3, h - 2, '#3a2014'); });
-    let g = 5.1;
-    while (g < 7.8) {
-      const kind = r(), p = iso(g, 0.08, 36);
+    // bottle shelves over the cabinet
+    [38, 50].forEach(h => { wR(c, 9.0, 11.6, h - 2, h, '#5e3820'); wR(c, 9.0, 11.6, h - 3, h - 2, '#3a2014'); });
+    let g = 9.1;
+    while (g < 11.4) {
+      const kind = r(), p = iso(g, 0.08, 50);
       if (kind < 0.35) { R(c, p[0] - 2, p[1] - 12, 5, 12, INK); R(c, p[0] - 1, p[1] - 11, 3, 11, '#2e6a3a'); R(c, p[0] - 1, p[1] - 9, 3, 3, '#f4ead0'); R(c, p[0], p[1] - 15, 1, 3, INK); }
       else if (kind < 0.65) { R(c, p[0] - 2, p[1] - 9, 6, 9, INK); R(c, p[0] - 1, p[1] - 8, 4, 8, '#f2eee2'); R(c, p[0] - 1, p[1] - 5, 4, 1, '#3a5aa8'); }
       else { R(c, p[0] - 2, p[1] - 14, 6, 14, INK); R(c, p[0] - 1, p[1] - 13, 4, 13, '#7a3a1a'); R(c, p[0] - 1, p[1] - 9, 4, 4, '#e8d8a0'); }
-      g += 0.44;
+      g += 0.42;
     }
-    g = 5.15;
-    while (g < 7.8) {
-      const kind = r(), p = iso(g, 0.08, 49);
-      if (kind < 0.5) { R(c, p[0] - 3, p[1] - 9, 8, 9, INK); R(c, p[0] - 2, p[1] - 8, 6, 8, kind < 0.25 ? '#c8a060' : '#8a8e9a'); }
-      else { R(c, p[0] - 4, p[1] - 7, 10, 7, INK); R(c, p[0] - 3, p[1] - 6, 8, 6, '#e0d8c0'); R(c, p[0] - 3, p[1] - 4, 8, 1, '#2c3c78'); }
-      g += 0.6;
-    }
-    // ---- kitchen (front, behind the low partition): shelf, ladles, stove ----
-    [30, 42].forEach(h => { wL(c, 2.4, 4.25, h - 2, h, '#5e3820'); wL(c, 2.4, 4.25, h - 3, h - 2, '#3a2014'); });
-    for (let gg = 2.55; gg < 4.2; gg += 0.5) { const p = iso(0.06, gg, 30); R(c, p[0] - 3, p[1] - 6, 7, 6, INK); R(c, p[0] - 2, p[1] - 5, 5, 5, '#f0ece0'); R(c, p[0] - 2, p[1] - 3, 5, 1, '#2c3c78'); }
-    for (let gg = 2.6; gg < 4.2; gg += 0.6) { const p = iso(0.06, gg, 42); R(c, p[0] - 3, p[1] - 9, 7, 9, INK); R(c, p[0] - 2, p[1] - 8, 5, 8, '#c8a060'); }
-    box(c, 0.12, 2.45, 0.95, 4.2, 0, 18, '#8a8e9a', '#5a5e6a', '#4a4e5a');
-    flr(c, 0.25, 2.6, 0.85, 3.2, 18, '#2a2a30'); flr(c, 0.25, 3.45, 0.85, 4.05, 18, '#2a2a30');
-    box(c, 0.3, 3.5, 0.8, 4.05, 18, 30, '#b8bcc8', '#8a8e9c', '#6a6e7a'); flr(c, 0.38, 3.57, 0.72, 3.97, 30, '#5a4030'); // stock pot
-    { const p = iso(0.55, 2.9, 18); glow(c, p[0], p[1], 8, '#4a8aff', 0.5); }
-    // ---- left wall: clock, poster, window frame (view painted live) ----
-    { const p = iso(0, 1.25, 46); disc(c, p[0], p[1], 8, 8, '#3a2014'); disc(c, p[0], p[1], 6, 6, '#f4ead0'); for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2; R(c, p[0] + Math.cos(a) * 5, p[1] + Math.sin(a) * 5, 1, 1, '#8a6a4a'); } }
-    wL(c, 6.5, 7.25, 23, 53, '#2a160c'); wL(c, 6.55, 7.2, 24, 52, '#f4ead0'); wL(c, 6.55, 7.2, 44, 52, '#c8322a');
-    { const p = iso(0, 6.88, 42); vtext(c, '사케', p[0], p[1], '#3a1a0a', 10, null, 10); }
-    (o.seats || []).forEach(se => { if (se.type === 'c') stool(c, se.gx, se.gy); });
+    // left wall (kitchen part): dish shelves, ladle rack, clock
+    [28, 40].forEach(h => { wL(c, 0.25, 1.95, h - 2, h, '#5e3820'); wL(c, 0.25, 1.95, h - 3, h - 2, '#3a2014'); });
+    for (let gg = 0.4; gg < 1.9; gg += 0.45) { const p = iso(0.06, gg, 28); R(c, p[0] - 3, p[1] - 6, 7, 6, INK); R(c, p[0] - 2, p[1] - 5, 5, 5, '#f0ece0'); R(c, p[0] - 2, p[1] - 3, 5, 1, '#2c3c78'); }
+    for (let gg = 0.45; gg < 1.9; gg += 0.5) { const p = iso(0.06, gg, 40); R(c, p[0] - 3, p[1] - 9, 7, 9, INK); R(c, p[0] - 2, p[1] - 8, 5, 8, '#c8a060'); }
+    { const p = iso(0, 1.1, 52); disc(c, p[0], p[1], 7, 7, '#3a2014'); disc(c, p[0], p[1], 5, 5, '#f4ead0'); }
+    // ---- hall side of the left wall: window (view painted live), poster, entrance ----
     wL(c, IL.WIN[0] - 0.1, IL.WIN[1] + 0.1, IL.WIN[2] - 3, IL.WIN[3] + 3, '#4a2a16');
-
-    // ---- plant in the front-left corner ----
-    { const p = iso(0.6, 6.95); box(c, 0.38, 6.72, 0.82, 7.16, 0, 11, '#3a2a1a', '#8a5530', '#6a3e22');
+    wL(c, 4.45, 5.15, 23, 53, '#2a160c'); wL(c, 4.5, 5.1, 24, 52, '#f4ead0'); wL(c, 4.5, 5.1, 44, 52, '#c8322a');
+    { const p = iso(0, 4.8, 42); vtext(c, '사케', p[0], p[1], '#3a1a0a', 10, null, 10); }
+    const [e0, e1] = IL.ENT;
+    wL(c, e0 - 0.15, e1 + 0.15, 0, 49, '#2a160c');
+    wL(c, e0, e1, 0, 46, '#101222');
+    for (let k = 0; k < 14; k++) { const p = iso(0, e0 + 0.05 + r() * (e1 - e0 - 0.1), 3 + r() * 40); R(c, p[0], p[1], 1, 3, '#3a4468'); }
+    for (let i = 0; i < 3; i++) { const g0 = e0 + i * (e1 - e0) / 3, g1 = g0 + (e1 - e0) / 3 - 0.03; wL(c, g0, g1, 26, 46, '#141a40'); wL(c, g0 + 0.03, g1 - 0.03, 27, 46, '#22306a'); wL(c, g0 + 0.03, g1 - 0.03, 43, 46, '#30418a'); }
+    { const p = iso(0, (e0 + e1) / 2, 40); ptext(c, '오뎅', p[0], p[1] - 4, '#f4ecd8', 8, 'center'); }
+    flr(c, -0.06, e0 - 0.05, 0.12, e1 + 0.05, 0, '#8a8478');
+    flr(c, 0.3, e0 + 0.05, 1.3, e1 - 0.05, 0, '#3a2a20'); flr(c, 0.35, e0 + 0.1, 1.25, e1 - 0.1, 0, '#5a4a6a');
+    for (let gg = e0 + 0.25; gg < e1 - 0.1; gg += 0.18) isoLine(c, iso(0.35, gg), iso(1.25, gg), '#4a3a5a');
+    box(c, 0.15, 7.0, 0.5, 7.35, 0, 12, '#3a2014', '#5e3820', '#4a2a16');
+    { const p = iso(0.32, 7.17, 12); line(c, p[0] - 2, p[1], p[0] - 3, p[1] - 12, '#2a4a8a'); line(c, p[0], p[1], p[0] + 1, p[1] - 14, '#a83a2a'); line(c, p[0] + 2, p[1], p[0] + 4, p[1] - 10, '#2a6a4a'); }
+    // plant in the front-right corner
+    { const p = iso(11.55, 7.3); box(c, 11.33, 7.08, 11.77, 7.52, 0, 11, '#3a2a1a', '#8a5530', '#6a3e22');
       disc(c, p[0], p[1] - 20, 9, 8, '#2e5a2e'); disc(c, p[0] - 3, p[1] - 24, 5, 5, '#3e7a3a'); disc(c, p[0] + 4, p[1] - 18, 4, 4, '#3e7a3a'); disc(c, p[0] + 1, p[1] - 27, 3, 3, '#5a9a4a'); }
   }
-  IL.WIN = [4.55, 6.2, 26, 50];
 
   function paintCounter(c, o) {
-    const { CH } = IL, [px0, py0, px1, py1] = IL.POT;
-    c.fillStyle = 'rgba(30,12,4,0.32)'; poly(c, quadF(0.5, 3.15, 8.15, 3.45, 0)); poly(c, quadF(8.15, 2.25, 8.45, 3.45, 0));
-    box(c, 0.5, 2.25, 8.15, 3.15, 0, CH, '#c8884a', '#7a4626', '#5a321a');
-    for (let gg = 1.5; gg < 8.15; gg += 1) { isoLine(c, iso(gg, 3.15, 1), iso(gg, 3.15, CH - 3), '#5a321a'); isoLine(c, iso(gg + 0.06, 3.15, 1), iso(gg + 0.06, 3.15, CH - 3), '#8a5430'); }
-    isoLine(c, iso(0.5, 3.15, CH - 2), iso(8.15, 3.15, CH - 2), '#3a1e10');
-    isoLine(c, iso(0.5, 3.15, CH), iso(8.15, 3.15, CH), '#e0a462'); isoLine(c, iso(8.15, 2.25, CH), iso(8.15, 3.15, CH), '#d09050');
-    isoLine(c, iso(0.5, 2.3, CH), iso(8.15, 2.3, CH), '#e0a462');
-    for (let gg = 1.0; gg < 7.9; gg += 1.3) isoLine(c, iso(gg, 2.85, CH), iso(gg + 0.5, 2.85, CH), '#b67a40');
-    // copper pot sunk into the counter
+    const { CH } = IL, [px0, py0, px1, py1] = IL.POT, [c0, c1, d0, d1] = IL.CTR;
+    c.fillStyle = 'rgba(30,12,4,0.32)'; poly(c, quadF(c0, d1, c1, d1 + 0.3, 0)); poly(c, quadF(c1, d0, c1 + 0.3, d1 + 0.3, 0));
+    box(c, c0, d0, c1, d1, 0, CH, '#c8884a', '#7a4626', '#5a321a');
+    for (let gg = c0 + 0.9; gg < c1; gg += 0.92) { isoLine(c, iso(gg, d1, 1), iso(gg, d1, CH - 3), '#5a321a'); isoLine(c, iso(gg + 0.06, d1, 1), iso(gg + 0.06, d1, CH - 3), '#8a5430'); }
+    isoLine(c, iso(c0, d1, CH - 2), iso(c1, d1, CH - 2), '#3a1e10');
+    isoLine(c, iso(c0, d1, CH), iso(c1, d1, CH), '#e0a462'); isoLine(c, iso(c1, d0, CH), iso(c1, d1, CH), '#d09050');
+    for (let gg = 3.2; gg < c1 - 0.6; gg += 1.3) isoLine(c, iso(gg, 2.45, CH), iso(gg + 0.5, 2.45, CH), '#b67a40');
+    // copper oden pot sunk into the counter
     box(c, px0, py0, px1, py1, CH, CH + 5, '#a86c28', '#b8642e', '#8a4a22');
     isoLine(c, iso(px0, py1, CH + 5), iso(px1, py1, CH + 5), '#f0a060'); isoLine(c, iso(px1, py0, CH + 5), iso(px1, py1, CH + 5), '#d88a4a');
-    // things on the counter (chef side)
-    let p = iso(0.85, 2.85, CH); R(c, p[0] - 2, p[1] - 10, 5, 10, INK); R(c, p[0] - 1, p[1] - 9, 3, 9, '#2a1410'); R(c, p[0] - 1, p[1] - 9, 3, 2, '#c82a2a');
-    p = iso(1.3, 2.9, CH); R(c, p[0] - 3, p[1] - 7, 7, 7, INK); R(c, p[0] - 2, p[1] - 4, 5, 3, '#d0a010'); R(c, p[0] - 2, p[1] - 6, 5, 2, '#fff080');
-    p = iso(7.6, 2.85, CH); R(c, p[0] - 7, p[1] - 9, 15, 9, INK); R(c, p[0] - 6, p[1] - 8, 13, 4, '#7a5430'); R(c, p[0] - 6, p[1] - 4, 13, 3, '#5a3a20'); for (let x = p[0] - 5; x < p[0] + 6; x += 2) R(c, x, p[1] - 8, 1, 3, '#e0c890');
-    p = iso(6.85, 2.9, CH); R(c, p[0] - 4, p[1] - 7, 9, 7, INK); R(c, p[0] - 3, p[1] - 6, 7, 3, '#ffffff'); R(c, p[0] - 3, p[1] - 3, 7, 2, '#d8d0c0');
+    // sake warmer (kanzake machine) with a tokkuri inside
+    box(c, 2.95, 2.2, 3.45, 2.6, CH, CH + 11, '#c8ccd6', '#9a9eaa', '#7a7e8a');
+    { const p = iso(3.2, 2.4, CH + 11); R(c, p[0] - 2, p[1] - 5, 4, 5, INK); R(c, p[0] - 1, p[1] - 4, 2, 4, '#f2eee2'); const q = iso(3.45, 2.6, CH + 6); R(c, q[0] - 3, q[1] - 2, 2, 2, '#f04a3a'); }
+    // karashi + soy by the pot
+    let p = iso(2.95, 2.75, CH); R(c, p[0] - 2, p[1] - 10, 5, 10, INK); R(c, p[0] - 1, p[1] - 9, 3, 9, '#2a1410'); R(c, p[0] - 1, p[1] - 9, 3, 2, '#c82a2a');
+    p = iso(3.4, 2.8, CH); R(c, p[0] - 3, p[1] - 7, 7, 7, INK); R(c, p[0] - 2, p[1] - 4, 5, 3, '#d0a010'); R(c, p[0] - 2, p[1] - 6, 5, 2, '#fff080');
+    // chopstick holders along the guests' edge
+    [5.2, 7.05, 8.9].forEach(gg => { const q = iso(gg, 2.8, CH); R(c, q[0] - 3, q[1] - 6, 6, 6, INK); R(c, q[0] - 2, q[1] - 5, 4, 2, '#7a5430'); R(c, q[0] - 2, q[1] - 3, 4, 2, '#5a3a20'); R(c, q[0] - 1, q[1] - 7, 1, 2, '#e0c890'); R(c, q[0] + 1, q[1] - 7, 1, 2, '#e0c890'); });
+    // draft-beer server: tower with two taps + drip tray
+    box(c, 9.55, 2.25, 10.15, 2.55, CH, CH + 2, '#8a8e9a', '#6a6e7a', '#4a4e5a');
+    { const q = iso(9.85, 2.35, CH + 2); R(c, q[0] - 1, q[1] - 14, 3, 14, '#c8ccd6'); R(c, q[0] - 4, q[1] - 15, 9, 3, '#b8bcc8'); R(c, q[0] - 4, q[1] - 21, 2, 6, '#2a2a30'); R(c, q[0] + 3, q[1] - 21, 2, 6, '#c8322a'); R(c, q[0] - 1, q[1] - 12, 3, 4, '#e8b030'); }
+    // cash register
+    box(c, 10.2, 2.2, 10.7, 2.65, CH, CH + 6, '#3a3e4a', '#2a2e3a', '#1e2230');
+    { const q = iso(10.45, 2.3, CH + 6); R(c, q[0] - 4, q[1] - 7, 8, 6, '#1e2230'); R(c, q[0] - 3, q[1] - 6, 6, 4, '#5ad0a0'); }
   }
 
-  // low wooden partition between the kitchen strip and the dining floor
-  function paintPartition(c) {
-    // kitchen edge: a brass rail on the floor instead of a wall, so nothing hides the chef
-    isoLine(c, iso(0, 4.4, 0), iso(8.4, 4.4, 0), '#2c2836'); isoLine(c, iso(0, 4.45, 0), iso(8.4, 4.45, 0), '#c8a060');
-  }
+  function paintPartition(c) { /* the kitchen sits behind the counter now — nothing in front */ }
 
   function table(c, cx, cy) {
     const { TH } = IL, x0 = cx - 0.9, x1 = cx + 0.9, y0 = cy - 0.5, y1 = cy + 0.5;
@@ -712,6 +734,9 @@
     isoLine(c, iso(x0, y1, TH), iso(x1, y1, TH), '#e0a468'); isoLine(c, iso(x0, y0, TH), iso(x0, y1, TH), '#d0925a');
     const p = iso(cx, cy, TH); R(c, p[0] - 3, p[1] - 7, 6, 7, INK); R(c, p[0] - 2, p[1] - 6, 4, 2, '#ffffff'); R(c, p[0] - 2, p[1] - 4, 4, 3, '#e0d8c8'); R(c, p[0] - 2, p[1] - 6, 4, 1, '#c8322a');
   }
+  IL.WIN = [2.5, 4.2, 26, 50];
+  IL.ENT = [5.6, 6.8];
+  IL.CTR = [0.5, 10.75, 2.1, 2.95];
 
   Object.assign(A, {
     R, disc, ellipseLine, line, glow, ptext, vtext, num, numW, spr, SPR, iconURL, BLOB, chibi, bubble, dish, lantern,
